@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.pjt.gestacao.ui.home.HomeFragment"
-        android:label="@string/title_home"
+        android:label="@string/title_app"
         tools:layout="@layout/fragment_home" />
 
     <fragment
