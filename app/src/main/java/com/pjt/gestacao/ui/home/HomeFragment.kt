@@ -4,47 +4,51 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
+import android.widget.ImageButton
+import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.pjt.gestacao.databinding.FragmentHomeBinding
+import androidx.fragment.app.viewModels
+import com.pjt.gestacao.R
 
 class HomeFragment : Fragment() {
 
-    private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
-
-    private lateinit var homeViewModel: HomeViewModel
-
+    private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        homeViewModel = ViewModelProvider(this)[HomeViewModel::class.java]
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-
-        // Exemplo: atualizando o TextView com o valor do ViewModel
-        val gestationTextView: TextView = binding.textView
-        homeViewModel.text.observe(viewLifecycleOwner) {
-            gestationTextView.text = it
-        }
-
-        // Exemplo: clicando no botão
-        binding.button.setOnClickListener {
-            // Aqui você pode executar alguma ação
-            // Por exemplo: mostrar uma mensagem ou navegar
-            homeViewModel.updateText("8 Meses")
-        }
-
-        return binding.root
+    ): View? {
+        // Inflar o layout que você colou acima
+        return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // ações nos botões
+        val botao1: ImageButton = view.findViewById(R.id.imageButton)
+        val botao2: ImageButton = view.findViewById(R.id.imageButton6)
+        val botao3: ImageButton = view.findViewById(R.id.imageButton5)
+        val botao4: ImageButton = view.findViewById(R.id.imageButton4)
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+        botao1.setOnClickListener {
+            Toast.makeText(requireContext(), "Botão 1 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        botao2.setOnClickListener {
+            Toast.makeText(requireContext(), "Botão 2 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        botao3.setOnClickListener {
+            Toast.makeText(requireContext(), "Botão 3 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        botao4.setOnClickListener {
+            Toast.makeText(requireContext(), "Botão 4 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        // Exemplo de uso com ViewModel
+        viewModel.texto.observe(viewLifecycleOwner) { texto ->
+            // Exibir mensagem vinda do ViewModel se quiser
+            Toast.makeText(requireContext(), texto, Toast.LENGTH_SHORT).show()
+        }
     }
 }
