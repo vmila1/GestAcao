@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GestAcao"
+rootProject.name = "AppGest"
 include(":app")

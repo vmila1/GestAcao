@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.pjt.gestacao"
+    namespace = "com.example.appgest"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.pjt.gestacao"
+        applicationId = "com.example.appgest"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -41,6 +41,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+    implementation (libs.material.v1110)  // Ou a versão mais recente
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)

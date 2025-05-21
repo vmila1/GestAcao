@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">GestAcao</string>
+    <string name="app_name">AppGest</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="encontre_ong_s_e_postos_de_sa_de">Encontre ONG’s e postos de saúde</string>
 </resources>
