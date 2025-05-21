@@ -28,6 +28,7 @@ class HomeFragment : Fragment() {
         val botao2: ImageButton = view.findViewById(R.id.imageButton6)
         val botao3: ImageButton = view.findViewById(R.id.imageButton5)
         val botao4: ImageButton = view.findViewById(R.id.imageButton4)
+        val botao5: ImageButton = view.findViewById(R.id.imageButton7)
 
         botao1.setOnClickListener {
             Toast.makeText(requireContext(), "Botão 1 clicado!", Toast.LENGTH_SHORT).show()
