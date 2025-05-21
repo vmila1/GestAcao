@@ -8,6 +8,8 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import android.widget.Button
+import androidx.navigation.fragment.findNavController
 import com.pjt.gestacao.R
 
 class HomeFragment : Fragment() {
@@ -23,12 +25,20 @@ class HomeFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        // ações nos botões
+        super.onViewCreated(view, savedInstanceState)
+        // Move the following code INSIDE this onViewCreated function
         val botao1: ImageButton = view.findViewById(R.id.imageButton)
         val botao2: ImageButton = view.findViewById(R.id.imageButton6)
         val botao3: ImageButton = view.findViewById(R.id.imageButton5)
         val botao4: ImageButton = view.findViewById(R.id.imageButton4)
         val botao5: ImageButton = view.findViewById(R.id.imageButton7)
+        // Assuming 'Button' was a typo and you meant ImageButton or you have a Button with this ID.
+        // If it's a regular Button, ensure you import android.widget.Button
+        val botaoMaisInfo: Button = view.findViewById(R.id.botao_saiba_mais) // Or android.widget.Button
+
+        botaoMaisInfo.setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_home_to_navigation_dashboard)
+        }
 
         botao1.setOnClickListener {
             Toast.makeText(requireContext(), "Botão 1 clicado!", Toast.LENGTH_SHORT).show()
@@ -44,6 +54,10 @@ class HomeFragment : Fragment() {
 
         botao4.setOnClickListener {
             Toast.makeText(requireContext(), "Botão 4 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        botao5.setOnClickListener {
+            Toast.makeText(requireContext(), "Botão 5 clicado!", Toast.LENGTH_SHORT).show()
         }
 
         // Exemplo de uso com ViewModel
