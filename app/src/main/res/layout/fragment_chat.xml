@@ -51,15 +51,17 @@
         android:layout_height="1dp"
         android:background="#E0E0E0" />
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center">
+        android:layout_weight="1">
 
-        <TextView
+        <LinearLayout
+            android:id="@+id/initialSuggestionsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" android:orientation="vertical"
+            android:padding="16dp"
+            android:gravity="center" android:visibility="visible"> <TextView
             android:id="@+id/titleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -69,91 +71,101 @@
             android:layout_marginBottom="24dp"
             android:textColor="#000000" />
 
-        <GridLayout
-            android:id="@+id/buttonGrid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="2"
-            android:rowCount="2"
-            android:alignmentMode="alignMargins"
-            android:useDefaultMargins="false">
+            <GridLayout
+                android:id="@+id/buttonGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:rowCount="2"
+                android:alignmentMode="alignMargins"
+                android:useDefaultMargins="false">
 
-            <Button
-                android:text="@string/btn_alimentacao"
-                style="@style/SuggestionButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:maxLines="1"
-                app:autoSizeTextType="uniform"
-                app:autoSizeMinTextSize="10sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeStepGranularity="1sp"/>
-            <Button
-                android:text="@string/btn_prenatal"
-                style="@style/SuggestionButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:maxLines="1"
-                app:autoSizeTextType="uniform"
-                app:autoSizeMinTextSize="10sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeStepGranularity="1sp"/>
-            <Button
-                android:text="@string/btn_inchaco"
-                style="@style/SuggestionButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:maxLines="1"
-                app:autoSizeTextType="uniform"
-                app:autoSizeMinTextSize="10sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeStepGranularity="1sp"/>
-            <Button
-                android:text="@string/btn_enjoo"
-                style="@style/SuggestionButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:maxLines="1"
-                app:autoSizeTextType="uniform"
-                app:autoSizeMinTextSize="10sp"
-                app:autoSizeMaxTextSize="16sp"
-                app:autoSizeStepGranularity="1sp"/>
-        </GridLayout>
-    </LinearLayout>
+                <Button
+                    android:id="@+id/btnAlimentacao"
+                    android:text="@string/btn_alimentacao"
+                    style="@style/SuggestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:maxLines="1"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="10sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeStepGranularity="1sp"/>
+                <Button
+                    android:id="@+id/btnPreNatal"
+                    android:text="@string/btn_prenatal"
+                    style="@style/SuggestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:maxLines="1"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="10sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeStepGranularity="1sp"/>
+                <Button
+                    android:id="@+id/btnInchaco"
+                    android:text="@string/btn_inchaco"
+                    style="@style/SuggestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:maxLines="1"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="10sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeStepGranularity="1sp"/>
+                <Button
+                    android:id="@+id/btnEnjoo"
+                    android:text="@string/btn_enjoo"
+                    style="@style/SuggestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:maxLines="1"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="10sp"
+                    app:autoSizeMaxTextSize="16sp"
+                    app:autoSizeStepGranularity="1sp"/>
+            </GridLayout>
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMessages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" android:padding="8dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:visibility="gone" /> </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="bottom"
-        android:paddingStart="16dp"
+        android:gravity="center_vertical"  android:paddingStart="16dp"
         android:paddingEnd="8dp"
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
-        android:background="@drawable/rounded_top_white_background"> <EditText
-        android:id="@+id/inputMessage"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="@string/hint_digite_aqui"
-        android:background="@drawable/rounded_edittext"
-        android:padding="12dp"
-        android:inputType="textMultiLine"
-        android:maxLines="5"
-        android:minHeight="110dp"
-        android:gravity="top|start"
-        android:importantForAutofill="no"
-        tools:ignore="LabelFor"
-        android:layout_marginEnd="8dp" />
+        android:background="@drawable/rounded_top_white_background">
+
+        <EditText
+            android:id="@+id/inputMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/hint_digite_aqui"
+            android:background="@drawable/rounded_edittext"
+            android:padding="12dp"
+            android:inputType="textMultiLine"
+            android:maxLines="5"
+            android:minHeight="110dp" android:gravity="top|start"
+            android:importantForAutofill="no"
+            tools:ignore="LabelFor"
+            android:layout_marginEnd="8dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_height="wrap_content" android:orientation="vertical"
             android:gravity="center_horizontal"> <ImageButton
             android:id="@+id/micButton"
             android:layout_width="48dp"
