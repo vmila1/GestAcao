@@ -22,4 +22,15 @@
         tools:layout="@layout/fragment_dashboard" />
 
     <fragment
-        android:id="@+id/navigation_chat_actual" android:name="com.pjt.gestacao.ui.ChatFragment" android:label="@string/title_chat" tools:layout="@layout/fragment_chat" /> </navigation>
+        android:id="@+id/navigation_chat_actual"
+        android:name="com.pjt.gestacao.ui.ChatFragment"
+        android:label="@string/title_chat"
+        tools:layout="@layout/fragment_chat" >
+        <action
+            android:id="@+id/action_chatActual_to_home"
+            app:destination="@id/navigation_home"
+            app:popUpTo="@id/navigation_home"
+        app:popUpToInclusive="true" />
+    </fragment>
+
+</navigation>
