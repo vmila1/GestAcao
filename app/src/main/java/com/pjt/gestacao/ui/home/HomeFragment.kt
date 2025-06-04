@@ -29,12 +29,12 @@ class HomeFragment : Fragment() {
         // Move the following code INSIDE this onViewCreated function
         val botao1: ImageButton = view.findViewById(R.id.imageButton)
         val botao2: ImageButton = view.findViewById(R.id.imageButton6)
-        val botao3: ImageButton = view.findViewById(R.id.imageButton5)
-        val botao4: ImageButton = view.findViewById(R.id.imageButton4)
+        val botao3: ImageButton = view.findViewById(R.id.imageButton4)
+        val botao4: ImageButton = view.findViewById(R.id.imageButton5)
         val botao5: ImageButton = view.findViewById(R.id.imageButton7)
         // Assuming 'Button' was a typo and you meant ImageButton or you have a Button with this ID.
         // If it's a regular Button, ensure you import android.widget.Button
-        val botaoMaisInfo: Button = view.findViewById(R.id.botao_saiba_mais) // Or android.widget.Button
+        val botaoMaisInfo: Button = view.findViewById(R.id.btnSaibaMais) // Or android.widget.Button
 
         botaoMaisInfo.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_home_to_navigation_dashboard)
