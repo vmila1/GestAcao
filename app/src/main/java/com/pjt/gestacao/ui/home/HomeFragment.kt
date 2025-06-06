@@ -11,8 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import android.widget.Button
-import androidx.appcompat.widget.AppCompatImageButton
 import androidx.navigation.fragment.findNavController
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.LatLng
 import com.pjt.gestacao.R
 
 
@@ -64,16 +66,12 @@ class HomeFragment : Fragment() {
             Toast.makeText(requireContext(), "Botão 5 clicado!", Toast.LENGTH_SHORT).show()
         }
 
-        val btnVerMapa = view.findViewById<AppCompatImageButton>(R.id.btnVerMapa)
-        btnVerMapa.setOnClickListener {
-            val intent = Intent(requireContext(), MapaActivity::class.java)
-            startActivity(intent)
+        // mapa
+        val mapView: MapView = view.findViewById(R.id.mapView)
+            mapView.onCreate(savedInstanceState)
+            mapView.getMapAsync { googleMap ->
+                googleMap.uiSettings.isZoomControlsEnabled = true
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-8.0476, -34.8770), 12f))
+            }
         }
-
-        // Exemplo de uso com ViewModel
-        viewModel.texto.observe(viewLifecycleOwner) { texto ->
-            // Exibir mensagem vinda do ViewModel se quiser
-            Toast.makeText(requireContext(), texto, Toast.LENGTH_SHORT).show()
-        }
-    }
 }

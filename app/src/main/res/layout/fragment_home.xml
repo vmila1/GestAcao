@@ -291,17 +291,15 @@
             android:id="@+id/textView8"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ajuda Próxima"
+            android:text="@string/ajuda_proxima"
             android:textAlignment="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
-        <ImageButton
-            android:id="@+id/btnVerMapa"
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/mapView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="10dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/map_placeholder" />
+            android:clickable="true" />
 
     </LinearLayout>
 
