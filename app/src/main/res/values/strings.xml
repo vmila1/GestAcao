@@ -6,4 +6,10 @@
     <string name="title_app">Olá, bem vinda!</string>
     <string name="title_activity_mapa">mapa</string>
     <string name="ajuda_proxima">Ajuda Próxima</string>
+    <string name="tira_duvidas">Tire suas dúvidas</string>
+    <string name="gestAi_descricao">GestAi - sua assistente na gestação</string>
+    <string name="mensagem_mes_7">Oi, mamãe! Já consigo ouvir sua voz!</string>
+    <string name="_7_meses">7 Meses</string>
+    <string name="dica_input">Tire aqui a sua dúvida...</string>
+    <string name="enviar">Enviar</string>
 </resources>
