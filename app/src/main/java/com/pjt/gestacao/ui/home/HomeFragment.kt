@@ -1,5 +1,7 @@
 package com.pjt.gestacao.ui.home
+import com.pjt.gestacao.ui.MapaActivity
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,8 +11,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import android.widget.Button
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.navigation.fragment.findNavController
 import com.pjt.gestacao.R
+
 
 class HomeFragment : Fragment() {
 
@@ -58,6 +62,12 @@ class HomeFragment : Fragment() {
 
         botao5.setOnClickListener {
             Toast.makeText(requireContext(), "Botão 5 clicado!", Toast.LENGTH_SHORT).show()
+        }
+
+        val btnVerMapa = view.findViewById<AppCompatImageButton>(R.id.btnVerMapa)
+        btnVerMapa.setOnClickListener {
+            val intent = Intent(requireContext(), MapaActivity::class.java)
+            startActivity(intent)
         }
 
         // Exemplo de uso com ViewModel
