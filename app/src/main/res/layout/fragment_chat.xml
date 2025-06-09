@@ -173,7 +173,6 @@
             android:src="@drawable/ic_mic_custom"
             android:background="@drawable/mic_send_button_background"
             android:contentDescription="@string/desc_botao_falar"
-            app:tint="#000000"
             android:padding="10dp"
             android:layout_marginBottom="8dp"/>
 

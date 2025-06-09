@@ -1,10 +1,10 @@
-package com.pjt.gestacao.network // Ou o nome do seu pacote de rede
+package com.pjt.gestacao.network
 
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-// Data class para o corpo da REQUISIÇÃO que seu app Kotlin enviará
+// Data class para o corpo da REQUISIÇÃO que o Kotlin enviará
 data class FlaskApiRequestBody(
     val user_id: String,
     val message: String

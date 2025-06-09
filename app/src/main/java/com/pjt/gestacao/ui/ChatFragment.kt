@@ -1,6 +1,15 @@
 package com.pjt.gestacao.ui
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -10,10 +19,13 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController // Para Jetpack Navigation (Opção 1)
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pjt.gestacao.R
 import com.pjt.gestacao.adapter.MessageAdapter
 import com.pjt.gestacao.data.ActionType
@@ -25,6 +37,8 @@ import com.pjt.gestacao.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 
 class ChatFragment : Fragment() {
 
@@ -35,7 +49,6 @@ class ChatFragment : Fragment() {
     private lateinit var recyclerViewMessages: RecyclerView
     private lateinit var initialSuggestionsLayout: LinearLayout
 
-    // Botões de sugestão
     private lateinit var btnAlimentacao: Button
     private lateinit var btnPreNatal: Button
     private lateinit var btnInchaco: Button
@@ -43,13 +56,25 @@ class ChatFragment : Fragment() {
 
     private lateinit var messageAdapter: MessageAdapter
     private val messagesList = mutableListOf<Message>()
-    private val userIdForFlaskApi = "AndroidAppUser" // Ou um ID de usuário dinâmico
+    private val userIdForFlaskApi = "AndroidAppUser"
+
+    private lateinit var speechRecognizer: SpeechRecognizer
+    private lateinit var speechRecognizerIntent: Intent
+
+    private val requestAudioPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startVoiceRecognition()
+            } else {
+                Toast.makeText(requireContext(), "Permissão de áudio negada.", Toast.LENGTH_LONG).show()
+            }
+        }
 
     companion object {
-        // Formato do Comando da IA: [ACAO_TextoDoBotaoComEspacos_IDENTIFICADORDAACAO]
+        // Formato esperado do comando da IA para gerar um botão de ação no chat.
         // Exemplo: [ACAO_Ir para Início_NAVIGATE_TO_HOME]
         private const val ACTION_COMMAND_PREFIX = "[ACAO_"
-        private const val ACTION_COMMAND_SEPARATOR = "_" // Usado para separar TextoDoBotao de IDENTIFICADORDAACAO no comando bruto
+        private const val ACTION_COMMAND_SEPARATOR = "_"
         private const val ACTION_COMMAND_SUFFIX = "]"
     }
 
@@ -59,14 +84,13 @@ class ChatFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_chat, container, false)
 
-        // Inicialização das views
+        // Binding das views
         inputMessage = view.findViewById(R.id.inputMessage)
         micButton = view.findViewById(R.id.micButton)
         sendButton = view.findViewById(R.id.sendButton)
         backButton = view.findViewById(R.id.backButton)
         recyclerViewMessages = view.findViewById(R.id.recyclerViewMessages)
         initialSuggestionsLayout = view.findViewById(R.id.initialSuggestionsLayout)
-
         btnAlimentacao = view.findViewById(R.id.btnAlimentacao)
         btnPreNatal = view.findViewById(R.id.btnPreNatal)
         btnInchaco = view.findViewById(R.id.btnInchaco)
@@ -74,13 +98,72 @@ class ChatFragment : Fragment() {
 
         setupRecyclerView()
         setupClickListeners()
-
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // O SpeechRecognizer é inicializado aqui para garantir que o contexto do fragmento já está disponível.
+        setupSpeechRecognizer()
+    }
+
+    private fun setupSpeechRecognizer() {
+        if (!isAdded || context == null) return
+
+        if (!SpeechRecognizer.isRecognitionAvailable(requireContext())) {
+            Log.e("ChatFragment", "Reconhecimento de fala não disponível neste dispositivo.")
+            Toast.makeText(requireContext(), "Reconhecimento de fala não disponível.", Toast.LENGTH_LONG).show()
+            micButton.isEnabled = false
+            return
+        }
+
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
+        speechRecognizerIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "pt-BR")
+            putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, true)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+        }
+
+        speechRecognizer.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                micButton.setImageResource(R.drawable.ic_mic_active)
+                Toast.makeText(requireContext(), "Ouvindo...", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+
+            override fun onEndOfSpeech() {
+                micButton.setImageResource(R.drawable.ic_mic_custom)
+            }
+
+            override fun onError(error: Int) {
+                val errorMessage = getSpeechErrorMessage(error)
+                Log.e("ChatFragment", "SpeechRecognizer Erro: $errorMessage (código: $error)")
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                micButton.setImageResource(R.drawable.ic_mic_custom)
+            }
+
+            override fun onResults(results: Bundle?) {
+                micButton.setImageResource(R.drawable.ic_mic_custom)
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    val recognizedText = matches[0]
+                    inputMessage.setText(recognizedText)
+                    inputMessage.setSelection(recognizedText.length)
+                }
+            }
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
     }
 
     private fun setupRecyclerView() {
         messageAdapter = MessageAdapter(messagesList) { actionType ->
-            // Este é o lambda que será chamado quando um botão de ação no chat for clicado
             handleChatAction(actionType)
         }
         recyclerViewMessages.adapter = messageAdapter
@@ -88,11 +171,8 @@ class ChatFragment : Fragment() {
     }
 
     private fun handleChatAction(actionType: ActionType) {
-        Log.d("ChatFragment", "Ação do chat clicada: $actionType")
         when (actionType) {
             ActionType.NAVIGATE_TO_HOME -> navigateToHome()
-            // Adicione outros casos para ActionType aqui se necessário
-            // ActionType.NAVIGATE_TO_BABY_DEVELOPMENT -> navigateToBabyDevelopmentScreen()
         }
     }
 
@@ -101,14 +181,13 @@ class ChatFragment : Fragment() {
             val messageText = inputMessage.text.toString().trim()
             if (messageText.isNotEmpty()) {
                 addUserMessageAndSendToFlask(messageText)
-                inputMessage.text.clear()
             } else {
                 Toast.makeText(requireContext(), "Por favor, digite uma mensagem", Toast.LENGTH_SHORT).show()
             }
         }
 
         micButton.setOnClickListener {
-            Toast.makeText(requireContext(), "Funcionalidade de microfone ainda não implementada.", Toast.LENGTH_SHORT).show()
+            checkAndRequestAudioPermission()
         }
 
         backButton.setOnClickListener {
@@ -133,16 +212,85 @@ class ChatFragment : Fragment() {
         }
     }
 
+    private fun checkAndRequestAudioPermission() {
+        if (!isAdded || context == null) return
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> {
+                startVoiceRecognition()
+            }
+            // Explica ao usuário por que a permissão é necessária, caso ele já tenha negado uma vez.
+            shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Permissão Necessária")
+                    .setMessage("Para usar a entrada por voz, precisamos da sua permissão para acessar o microfone.")
+                    .setPositiveButton("Ok") { _, _ ->
+                        requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+            else -> {
+                requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }
+    }
+
+    private fun startVoiceRecognition() {
+        if (!isAdded || context == null) return
+        if (SpeechRecognizer.isRecognitionAvailable(requireContext())) {
+            try {
+                speechRecognizer.startListening(speechRecognizerIntent)
+            } catch (e: Exception) {
+                Log.e("ChatFragment", "Erro ao iniciar SpeechRecognizer: ${e.message}", e)
+            }
+        } else {
+            Toast.makeText(requireContext(), "Reconhecimento de fala não disponível.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun getSpeechErrorMessage(errorCode: Int): String {
+        return when (errorCode) {
+            SpeechRecognizer.ERROR_AUDIO -> "Erro na gravação do áudio."
+            SpeechRecognizer.ERROR_CLIENT -> "Erro no cliente de reconhecimento."
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Sem permissão para usar o microfone."
+            SpeechRecognizer.ERROR_NETWORK -> "Erro de rede para reconhecimento de voz."
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Tempo de rede esgotado para reconhecimento."
+            SpeechRecognizer.ERROR_NO_MATCH -> "Não entendi o que você disse. Tente novamente."
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Serviço de reconhecimento de voz ocupado."
+            SpeechRecognizer.ERROR_SERVER -> "Erro no servidor de reconhecimento de voz."
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Nenhuma fala detectada. Por favor, tente falar mais perto do microfone."
+            else -> "Erro desconhecido no reconhecimento de voz."
+        }
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        if (!isAdded || context == null) return false
+        val connectivityManager = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return when {
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
+        }
+    }
+
     private fun hideInitialSuggestions() {
-        if (initialSuggestionsLayout.visibility == View.VISIBLE) {
+        if (initialSuggestionsLayout.isVisible) {
             initialSuggestionsLayout.visibility = View.GONE
-            if (recyclerViewMessages.visibility == View.GONE) {
+            if (recyclerViewMessages.isGone) {
                 recyclerViewMessages.visibility = View.VISIBLE
             }
         }
     }
 
     private fun addUserMessageAndSendToFlask(text: String) {
+        if (!isNetworkAvailable()) {
+            showOfflineDialog()
+            return
+        }
+        inputMessage.text.clear()
         hideInitialSuggestions()
 
         val userMessage = Message(text = text, sender = Sender.USER)
@@ -156,84 +304,85 @@ class ChatFragment : Fragment() {
         scrollToBottom()
 
         val requestBody = FlaskApiRequestBody(user_id = userIdForFlaskApi, message = text)
-        Log.d("ChatFragment", "Enviando para API Flask: user_id=${requestBody.user_id}, message=${requestBody.message}")
 
-        RetrofitClient.instance.sendMessageToFlask(requestBody).enqueue(object : Callback<FlaskApiResponseBody> {
-            override fun onResponse(call: Call<FlaskApiResponseBody>, response: Response<FlaskApiResponseBody>) {
-                removeTypingIndicator()
+        try {
+            RetrofitClient.instance.sendMessageToFlask(requestBody).enqueue(object : Callback<FlaskApiResponseBody> {
+                override fun onResponse(call: Call<FlaskApiResponseBody>, response: Response<FlaskApiResponseBody>) {
+                    removeTypingIndicator()
+                    if (response.isSuccessful) {
+                        val flaskApiResponse = response.body()
+                        val aiRawResponse = flaskApiResponse?.response?.trim()
 
-                if (response.isSuccessful) {
-                    val flaskApiResponse = response.body()
-                    val aiRawResponse = flaskApiResponse?.response?.trim() ?: "Não obtive uma resposta válida."
-                    Log.d("ChatFragment", "Resposta da API Flask (bruta): $aiRawResponse")
+                        var commandProcessedSuccessfully = false
+                        if (aiRawResponse.isNullOrEmpty()) {
+                            addRegularAiMessage("A assistente teve um problema ao gerar a resposta. Tente reformular sua pergunta.")
+                        } else {
+                            var mainAiTextMessage = aiRawResponse
+                            // Verifica se a resposta contém um comando de ação no final
+                            if (aiRawResponse.endsWith(ACTION_COMMAND_SUFFIX)) {
+                                val lastPrefixIndex = aiRawResponse.lastIndexOf(ACTION_COMMAND_PREFIX)
+                                if (lastPrefixIndex != -1) {
+                                    val commandPart = aiRawResponse.substring(lastPrefixIndex)
+                                    mainAiTextMessage = aiRawResponse.substring(0, lastPrefixIndex).trim()
+                                    val commandContent = commandPart.removePrefix(ACTION_COMMAND_PREFIX).removeSuffix(ACTION_COMMAND_SUFFIX)
+                                    val parts = commandContent.split(ACTION_COMMAND_SEPARATOR, limit = 2)
 
-                    var mainAiTextMessage = aiRawResponse
-                    var commandProcessedSuccessfully = false
-
-                    if (aiRawResponse.endsWith(ACTION_COMMAND_SUFFIX)) {
-                        val lastPrefixIndex = aiRawResponse.lastIndexOf(ACTION_COMMAND_PREFIX)
-                        if (lastPrefixIndex != -1 && lastPrefixIndex < aiRawResponse.length - ACTION_COMMAND_SUFFIX.length) {
-
-                            val commandPart = aiRawResponse.substring(lastPrefixIndex)
-                            mainAiTextMessage = aiRawResponse.substring(0, lastPrefixIndex).trim()
-
-                            val commandContent = commandPart.removePrefix(ACTION_COMMAND_PREFIX).removeSuffix(ACTION_COMMAND_SUFFIX)
-                            val parts = commandContent.split(ACTION_COMMAND_SEPARATOR, limit = 2)
-
-                            if (parts.size == 2) {
-                                val buttonText = parts[0].replace("_", " ") // Para o caso da IA usar _ no texto do botão
-                                val actionTypeName = parts[1].trim() // .trim() aqui é importante
-                                try {
-                                    val actionType = ActionType.valueOf(actionTypeName)
-
-                                    if (mainAiTextMessage.isNotEmpty()) {
-                                        addRegularAiMessage(mainAiTextMessage)
+                                    if (parts.size == 2) {
+                                        val buttonText = parts[0].replace("_", " ")
+                                        val actionTypeName = parts[1].trim()
+                                        try {
+                                            val actionType = ActionType.valueOf(actionTypeName)
+                                            if (mainAiTextMessage.isNotEmpty()) { addRegularAiMessage(mainAiTextMessage) }
+                                            val actionMessage = Message(text = "", sender = Sender.AI, buttonText = buttonText, actionType = actionType)
+                                            messagesList.add(actionMessage)
+                                            messageAdapter.notifyItemInserted(messagesList.size - 1)
+                                            commandProcessedSuccessfully = true
+                                        } catch (e: IllegalArgumentException) {
+                                            Log.e("ChatFragment", "Tipo de ação desconhecido no comando: '$actionTypeName'", e)
+                                        }
                                     }
-
-                                    val actionMessage = Message(
-                                        text = "", // Texto principal da mensagem de ação pode ser vazio
-                                        sender = Sender.AI,
-                                        buttonText = buttonText,
-                                        actionType = actionType
-                                    )
-                                    messagesList.add(actionMessage)
-                                    messageAdapter.notifyItemInserted(messagesList.size - 1)
-                                    commandProcessedSuccessfully = true
-
-                                } catch (e: IllegalArgumentException) {
-                                    Log.e("ChatFragment", "Tipo de ação desconhecido no comando: '$actionTypeName'", e)
                                 }
-                            } else {
-                                Log.d("ChatFragment", "Comando ACAO malformado (partes insuficientes): $commandContent")
+                            }
+                            if (!commandProcessedSuccessfully) {
+                                addRegularAiMessage(mainAiTextMessage)
                             }
                         }
+                    } else { // Trata erros de HTTP como 4xx, 5xx
+                        val errorMessage = when(response.code()) {
+                            503 -> "A assistente está temporariamente indisponível. Estamos trabalhando para resolver."
+                            else -> "A assistente virtual está indisponível no momento. Tente novamente mais tarde."
+                        }
+                        addRegularAiMessage(errorMessage)
                     }
-
-                    if (!commandProcessedSuccessfully) {
-                        // Se não houve comando, ou o comando falhou ao ser processado, exibe a mensagem bruta (ou o que sobrou dela)
-                        addRegularAiMessage(aiRawResponse)
-                    }
-                    scrollToBottom()
-
-                } else {
-                    val errorBody = response.errorBody()?.string() ?: "Erro desconhecido na API Flask"
-                    Log.e("ChatFragment", "Erro na API Flask: ${response.code()} - ${response.message()} - $errorBody")
-                    addRegularAiMessage("Desculpe, ocorreu um erro com a API (${response.code()}).")
                     scrollToBottom()
                 }
-            }
 
-            override fun onFailure(call: Call<FlaskApiResponseBody>, t: Throwable) {
-                removeTypingIndicator()
-                Log.e("ChatFragment", "Falha na chamada da API Flask: ${t.message}", t)
-                addRegularAiMessage("Falha na conexão com o servidor. Verifique sua internet ou a URL do ngrok.")
-                scrollToBottom()
-            }
-        })
+                override fun onFailure(call: Call<FlaskApiResponseBody>, t: Throwable) {
+                    removeTypingIndicator()
+                    Log.e("ChatFragment", "Falha de rede na chamada da API: ${t.message}", t)
+                    addRegularAiMessage("Não foi possível conectar com a assistente. Verifique sua conexão e tente novamente.")
+                    scrollToBottom()
+                }
+            })
+        } catch (e: Exception) { // Captura outros erros antes da chamada ser despachada
+            Log.e("ChatFragment", "Erro ao tentar enviar mensagem: ${e.message}", e)
+            Toast.makeText(requireContext(), "Erro ao enviar sua mensagem. Tente novamente.", Toast.LENGTH_LONG).show()
+            removeTypingIndicator()
+        }
+    }
+
+    private fun showOfflineDialog() {
+        if (!isAdded || context == null) { return }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Sem Conexão")
+            .setMessage("Você está offline. Algumas funcionalidades, como a assistente virtual, podem não funcionar corretamente.")
+            .setPositiveButton("Entendido") { dialog, _ -> dialog.dismiss() }
+            .setIcon(R.drawable.ic_no_internet)
+            .show()
     }
 
     private fun addRegularAiMessage(text: String) {
-        if (text.isNotEmpty()) { // Evita adicionar mensagens completamente vazias
+        if (text.isNotEmpty()) {
             val aiMessage = Message(text = text, sender = Sender.AI)
             messagesList.add(aiMessage)
             messageAdapter.notifyItemInserted(messagesList.size - 1)
@@ -250,34 +399,27 @@ class ChatFragment : Fragment() {
 
     private fun scrollToBottom() {
         if (messageAdapter.itemCount > 0) {
-            recyclerViewMessages.post { // Usar post para garantir que a rolagem ocorra após o layout
+            // Usar post garante que a rolagem aconteça depois que o RecyclerView atualizar o layout
+            recyclerViewMessages.post {
                 recyclerViewMessages.smoothScrollToPosition(messageAdapter.itemCount - 1)
             }
         }
     }
 
     private fun navigateToHome() {
-        Log.d("ChatFragment", "Navegando para HomeFragment...")
         try {
-            // Opção 1: Usando Jetpack Navigation Component
-            // Substitua 'R.id.action_chatActual_to_home' pelo ID da action definida no seu mobile_navigation.xml
-            // que leva do ChatFragment para o HomeFragment.
             findNavController().navigate(R.id.action_chatActual_to_home)
-            Log.d("ChatFragment", "Navegação via NavController (action_chatActual_to_home) iniciada.")
-
-            // Opção 2: Usando FragmentManager manualmente (Comente a Opção 1 se usar esta)
-            // Substitua 'R.id.nav_host_fragment' pelo ID real do container de Fragment na sua Activity.
-            /*
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, HomeFragment())
-                .addToBackStack(null)
-                .commit()
-            Log.d("ChatFragment", "Navegação via FragmentManager (replace) iniciada.")
-            */
-
         } catch (e: Exception) {
             Log.e("ChatFragment", "Erro ao tentar navegar para Home: ${e.message}", e)
-            Toast.makeText(requireContext(), "Não foi possível abrir a tela Home.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Erro ao acessar a funcionalidade. Tente novamente.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (::speechRecognizer.isInitialized) {
+            speechRecognizer.stopListening()
+            speechRecognizer.destroy()
         }
     }
 }

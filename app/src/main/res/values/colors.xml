@@ -10,4 +10,6 @@
     <color name="suggestion_button_stroke_grey">#E0E0E0</color>
     <color name="suggestion_button_text_black">#000000</color>
     <color name="suggestion_button_ripple_grey">#40000000</color>
+    <color name="pink_button">#FF54A7</color>
+    <color name="mic_button_background_default">#E0E0E0</color> <color name="mic_button_background_active">#BBDEFB</color>
 </resources>
