@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- cores usadas no tema -->
+    <color name="seu_primary">#6200EE</color>
+    <color name="seu_primary_dark">#3700B3</color>
+    <color name="seu_accent">#03DAC5</color>
+
+    <!-- se você já tiver outras, mantenha-as aqui -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,6 +13,15 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="gray">#F1ECEC</color>
-    <color name="rose">#D89A9A</color>
+
+    <!-- Header rosa -->
+    <color name="pink_header">#FFF6F6</color>
+    <!-- Fundo da search bar -->
+    <color name="gray_search_bg">#F0F0F0</color>
+    <!-- Hint da search bar -->
+    <color name="hint_text">#999999</color>
+    <!-- Texto do título (escuro) -->
+    <color name="text_title">#4D4D4D</color>
+    <!-- Texto secundário (cinza escuro) -->
+    <color name="text_secondary">#ADA8A8</color>
 </resources>

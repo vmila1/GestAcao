@@ -19,5 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AppGest"
+rootProject.name = "Buscar"
 include(":app")
+ 

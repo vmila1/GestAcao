@@ -1,16 +1,13 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.AppGest" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- No arquivo res/values/themes.xml -->
+    <style name="Theme.Buscar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- suas cores: -->
+        <item name="colorPrimary">@color/seu_primary</item>
+        <item name="colorPrimaryDark">@color/seu_primary_dark</item>
+        <item name="colorAccent">@color/seu_accent</item>
+        <!-- opcional: sobrescreva o estilo padrão de card, botão etc -->
+        <item name="materialCardViewStyle">@style/Widget.MaterialComponents.CardView</item>
     </style>
 </resources>
+
