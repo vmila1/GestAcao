@@ -12,4 +12,16 @@
     <string name="_7_meses">7 Meses</string>
     <string name="dica_input">Tire aqui a sua dúvida...</string>
     <string name="enviar">Enviar</string>
+    <string name="title_chat">chat</string>
+    <string name="btn_alimentacao">Alimentação</string>
+    <string name="btn_inchaco">Inchaço</string>
+    <string name="btn_enjoo">Enjoo</string>
+    <string name="btn_pos_parto">Pós-parto</string>
+    <string name="title_como_ajudar">Como posso ajudar?</string>
+    <string name="hint_digite_aqui">Digite aqui</string>
+    <string name="desc_botao_falar">Falar</string>
+    <string name="desc_botao_enviar">Enviar</string>
+    <string name="desc_botao_voltar">Botão de voltar</string>
+    <string name="app_name_title">GestAI</string>
+    <string name="btn_prenatal">Pré-natal</string>
 </resources>
