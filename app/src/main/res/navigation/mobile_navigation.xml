@@ -9,7 +9,11 @@
         android:id="@+id/navigation_home"
         android:name="com.pjt.gestacao.ui.home.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_home_to_chat"
+            app:destination="@id/navigation_chat_actual" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_dashboard"
@@ -18,8 +22,15 @@
         tools:layout="@layout/fragment_dashboard" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="com.pjt.gestacao.ui.notifications.NotificationsFragment"
-        android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        android:id="@+id/navigation_chat_actual"
+        android:name="com.pjt.gestacao.ui.ChatFragment"
+        android:label="@string/title_chat"
+        tools:layout="@layout/fragment_chat" >
+        <action
+            android:id="@+id/action_chatActual_to_home"
+            app:destination="@id/navigation_home"
+            app:popUpTo="@id/navigation_home"
+        app:popUpToInclusive="true" />
+    </fragment>
+
 </navigation>
