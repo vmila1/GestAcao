@@ -14,4 +14,10 @@
     <item
         android:id="@+id/navigation_chat_actual"  android:icon="@android:drawable/sym_action_chat"
         android:title="@string/title_chat" />
+
+    <item
+        android:id="@+id/navigation_buscar"
+        android:icon="@android:drawable/sym_action_chat"
+        android:title="Buscar" />
+
 </menu>

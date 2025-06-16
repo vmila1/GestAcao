@@ -37,4 +37,10 @@
             app:popUpToInclusive="true" />
     </fragment>
 
+    <fragment
+        android:id="@+id/navigation_buscar"
+        android:name="com.pjt.gestacao.ui.buscar.BuscarFragment"
+        android:label="Buscar"
+        tools:layout="@layout/fragment_buscar" />
+
 </navigation>

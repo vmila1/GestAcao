@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF6F6"
+    android:paddingTop="16dp"
+    tools:context="com.pjt.gestacao.ui.buscar.BuscarFragment">
+
+    <!-- 1) HEADER -->
+
+    <!-- 2) SEARCH BAR em container branco, com overflow no header -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:background="#FDE4E4"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="@font/montserrat_medium"
+            android:text="Encontre ONG’s e postos de saúde"
+            android:textColor="#4D4D4D"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
+
+
+        <EditText
+            android:id="@+id/searchBar"
+            android:layout_width="250dp"
+            android:layout_height="48dp"
+            android:layout_gravity="start"
+            android:layout_weight="1"
+            android:background="@drawable/search_background"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="8dp"
+            android:hint="Pesquisar..."
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:paddingStart="16dp"
+            android:textColor="#ADA8A8"
+            android:textColorHint="#999999" />
+
+        <Spinner
+            android:id="@+id/spinnerFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:dropDownWidth="fill_parent"
+            android:spinnerMode="dialog" />
+
+
+    </LinearLayout>
+
+    <!-- 3) LISTA DE CARDS -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvInstitutions"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="12dp"
+        tools:listitem="@layout/item_institution" />
+</LinearLayout>
