@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.pjt.gestacao.R
 import com.pjt.gestacao.databinding.FragmentBuscarBinding
 import com.pjt.gestacao.model.Institution
-import com.pjt.gestacao.ui.buscar.InstitutionAdapter
 import com.pjt.gestacao.ui.InstitutionDetailActivity
 import android.widget.AdapterView
 

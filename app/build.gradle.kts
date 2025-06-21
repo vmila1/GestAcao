@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+    alias(libs.plugins.jetbrains.kotlin.compose)
+
 }
 
 android {
@@ -16,6 +18,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -36,7 +39,9 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
     }
+
 }
 
 dependencies {
@@ -57,4 +62,15 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
+    // Compose BOM
+    val composeBom = platform("androidx.compose:compose-bom:2024.05.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
+// Dependências do Compose
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }

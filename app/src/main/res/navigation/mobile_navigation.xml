@@ -39,7 +39,7 @@
 
     <fragment
         android:id="@+id/navigation_buscar"
-        android:name="com.pjt.gestacao.ui.buscar.BuscarFragment"
+        android:name="com.pjt.gestacao.ui.buscar.InfoFragment"
         android:label="Buscar"
         tools:layout="@layout/fragment_buscar" />
 

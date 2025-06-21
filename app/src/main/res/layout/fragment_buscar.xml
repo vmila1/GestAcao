@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FFF6F6"
     android:paddingTop="16dp"
-    tools:context="com.pjt.gestacao.ui.buscar.BuscarFragment">
+    tools:context="com.pjt.gestacao.ui.buscar.InfoFragment">
 
     <!-- 1) HEADER -->
 
