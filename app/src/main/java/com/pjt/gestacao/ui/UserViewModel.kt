@@ -54,4 +54,30 @@ class UserViewModel : ViewModel() {
             )
         }
     }
+    // LiveData para armazenar os dados da gestante
+    private val _gestanteData = MutableLiveData<Map<String, Any>?>()
+    val gestanteData: LiveData<Map<String, Any>?> = _gestanteData
+
+    // LiveData para controlar o estado de "carregando"
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    /**
+     * Pede ao FirebaseUtils para carregar os dados do Firestore.
+     * O resultado é postado nos LiveData.
+     */
+    fun loadGestanteData() {
+        _isLoading.value = true
+        FirebaseUtils.buscarDadosGestante(
+            onSuccess = { dados ->
+                _gestanteData.value = dados
+                _isLoading.value = false
+            },
+            onFailure = {
+                // Em caso de falha, informa que não há dados e para de carregar
+                _gestanteData.value = null
+                _isLoading.value = false
+            }
+        )
+    }
 }
