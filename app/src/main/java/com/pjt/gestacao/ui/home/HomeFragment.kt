@@ -10,22 +10,23 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.crashlytics.buildtools.reloc.org.apache.commons.logging.Log
-import com.pjt.gestacao.FirebaseUtils
+import com.pjt.gestacao.MainActivity
 import com.pjt.gestacao.R
+import com.pjt.gestacao.ui.UserViewModel
 
 class HomeFragment : Fragment() {
 
-    // Referências para os elementos da UI que serão atualizados
+    // Obtém a instância do ViewModel compartilhado pela MainActivity
+    private val userViewModel: UserViewModel by activityViewModels()
+
+    // Referências para os elementos da UI
     private lateinit var tvMeses: TextView
     private lateinit var tvMensagem: TextView
-
-    private lateinit var auth: FirebaseAuth
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,12 +35,8 @@ class HomeFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
-    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Inicializa o Firebase Auth
-        auth = FirebaseAuth.getInstance()
 
         // Inicializa as Views
         tvMeses = view.findViewById(R.id.tvMeses)
@@ -48,72 +45,48 @@ class HomeFragment : Fragment() {
         setupButtons(view)
         setupMap(view, savedInstanceState)
 
-        // Inicia o processo de verificação de usuário e carregamento de dados
-        iniciarSessaoEBuscarDados()
+        // Configura os observadores para reagir às mudanças no ViewModel
+        setupObservers()
+
+        // Pede ao ViewModel para carregar os dados da gestante.
+        // Isso só será chamado quando a Home for exibida, ou seja, o usuário já está logado.
+        userViewModel.loadGestanteData()
     }
 
-    private fun iniciarSessaoEBuscarDados() {
-        if (auth.currentUser == null) {
-            // Se não há usuário, realiza o login anônimo
-            activity?.let {
-                it.setProgressBar(true) // Mostra um loading na tela, se tiver
+    private fun setupObservers() {
+        // 1. Observa o estado de carregamento para mostrar/esconder o ProgressBar
+        userViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            (activity as? MainActivity)?.setProgressBar(isLoading)
+        }
+
+        // 2. Observa os dados da gestante
+        userViewModel.gestanteData.observe(viewLifecycleOwner) { dados ->
+            if (dados != null) {
+                // Se os dados existem, atualiza a UI
+                updateUI(dados)
+            } else {
+                // Isso não deveria acontecer nesse fluxo, mas é uma segurança.
+                // Indica que o usuário está logado mas não tem dados no Firestore.
+                Toast.makeText(requireContext(), "Dados da gestante não encontrados.", Toast.LENGTH_SHORT).show()
             }
-            auth.signInAnonymously()
-                .addOnSuccessListener {
-                    Log.d("HomeFragment", "Login anônimo realizado com sucesso. UID: ${it.user?.uid}")
-                    // Após o login, busca os dados
-                    carregarDadosDaGestante()
-                }
-                .addOnFailureListener { e ->
-                    activity?.let {
-                        it.setProgressBar(false)
-                    }
-                    Log.e("HomeFragment", "Falha no login anônimo", e)
-                    Toast.makeText(requireContext(), "Erro de conexão. Verifique sua internet.", Toast.LENGTH_LONG).show()
-                }
-        } else {
-            // Se o usuário já existe de uma sessão anterior, apenas carrega os dados
-            Log.d("HomeFragment", "Usuário já logado. UID: ${auth.currentUser?.uid}")
-            carregarDadosDaGestante()
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private fun carregarDadosDaGestante() {
-        activity?.let {
-            it.setProgressBar(true)
+    private fun updateUI(dados: Map<String, Any>) {
+        val meses = dados["mesGestacao"] as? Long ?: 0
+
+        tvMeses.text = "$meses meses"
+
+        tvMensagem.text = when (meses) {
+            1L, 2L, 3L -> "Cuidados do primeiro trimestre!"
+            4L, 5L, 6L -> "Aproveite o segundo trimestre!"
+            7L, 8L, 9L -> "Reta final! Prepare-se para a chegada!"
+            else -> "Bem-vinda a esta jornada especial!"
         }
-        FirebaseUtils.buscarDadosGestante(
-            onSuccess = { dados ->
-                activity?.let {
-                    it.setProgressBar(false)
-                }
-                if (dados != null) {
-                    // Documento encontrado, atualiza a UI
-                    val meses = dados["semanasGestacao"] as? Long ?: 0
-                    val semanas = (meses * 4).toInt()
-
-                    tvMeses.text = "$meses meses"
-                    // Adicione sua lógica para a mensagem aqui...
-                    tvMensagem.text = "Bem-vinda de volta!"
-
-                } else {
-                    // Documento não encontrado, é o primeiro acesso da usuária.
-                    // Você deve navegar para a tela de Onboarding/Cadastro aqui.
-                    Toast.makeText(requireContext(), "Bem-vinda! Complete seu cadastro.", Toast.LENGTH_LONG).show()
-                    // Exemplo: findNavController().navigate(R.id.action_home_to_onboarding)
-                }
-            },
-            onFailure = { e ->
-                activity?.let {
-                    it.setProgressBar(false)
-                }
-                Toast.makeText(requireContext(), "Erro ao buscar dados: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        )
+        // Lógicas aqui para o mapa, etc.
     }
 
-    // Funções de setup para organizar o código
     private fun setupButtons(view: View) {
         val botaoMaisInfo: Button = view.findViewById(R.id.btnSaibaMais)
         botaoMaisInfo.setOnClickListener {

@@ -15,7 +15,7 @@ object FirebaseUtils {
      * Usa o UID do usuário anônimo logado como ID do documento.
      */
     fun salvarDadosGestante(
-        semanas: Int,
+        meses: Int,
         generoBebe: String?,
         latitude: Double,
         longitude: Double,
@@ -23,19 +23,15 @@ object FirebaseUtils {
         onFailure: (Exception) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
-        // Pega o UID do usuário anônimo atualmente logado.
         val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-        // Se o userId for nulo, significa que algo deu errado com o login anônimo.
         if (userId == null) {
             onFailure(Exception("Usuário não autenticado. Não é possível salvar os dados."))
             return
         }
 
         val data = hashMapOf(
-            // Não precisamos mais salvar o "uuid" dentro do documento,
-            // pois o ID do documento JÁ é o UID do usuário.
-            "semanasGestacao" to semanas,
+            "mesGestacao" to meses,
             "generoBebe" to generoBebe,
             "primeiroAcesso" to System.currentTimeMillis(),
             "ultimaLocalizacao" to GeoPoint(latitude, longitude)
