@@ -1,18 +1,22 @@
 package com.pjt.gestacao
 
 import android.os.Bundle
-import android.view.View // Importe View
+import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
-// import androidx.navigation.ui.setupActionBarWithNavController // Já estava comentado, ótimo
+// import androidx.navigation.ui.setupActionBarWithNavController // Já estava comentado
 import androidx.navigation.ui.setupWithNavController
 import com.pjt.gestacao.databinding.ActivityMainBinding
+import androidx.activity.viewModels
+import com.pjt.gestacao.ui.UserViewModel
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    // Instancia o ViewModel que será compartilhado por todos os fragments desta activity
+    private val userViewModel: UserViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,9 +37,9 @@ class MainActivity : AppCompatActivity() {
         //setupActionBarWithNavController(navController, appBarConfiguration) // Mantém comentado
         navView.setupWithNavController(navController)
 
-        // ADICIONE ESTE TRECHO PARA CONTROLAR A VISIBILIDADE DA BOTTOMNAVIGATIONVIEW
+        // TRECHO PARA CONTROLAR A VISIBILIDADE DA BOTTOMNAVIGATIONVIEW
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            if (destination.id == R.id.navigation_chat_actual) { // Use o ID correto do seu ChatFragment no seu grafo de navegação
+            if (destination.id == R.id.navigation_chat_actual) {
                 binding.navView.visibility = View.GONE
             } else {
                 binding.navView.visibility = View.VISIBLE

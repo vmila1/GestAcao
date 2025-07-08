@@ -3,7 +3,36 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@id/entryFragment"> <fragment
+    android:id="@+id/entryFragment"
+    android:name="com.pjt.gestacao.ui.entry.EntryFragment"
+    android:label="Entrada"
+    tools:layout="@layout/fragment_entry">
+
+    <action
+        android:id="@+id/action_entryFragment_to_navigation_home"
+        app:destination="@id/navigation_home"
+        app:popUpTo="@id/entryFragment"
+        app:popUpToInclusive="true" />
+
+    <action
+        android:id="@+id/action_entryFragment_to_onboardingFragment"
+        app:destination="@id/onboardingFragment"
+        app:popUpTo="@id/entryFragment"
+        app:popUpToInclusive="true" />
+</fragment>
+
+    <fragment
+        android:id="@+id/onboardingFragment"
+        android:name="com.pjt.gestacao.ui.onboarding.OnboardingFragment"
+        android:label="Cadastro"
+        tools:layout="@layout/fragment_onboarding"> <action
+        android:id="@+id/action_onboardingFragment_to_navigation_home"
+        app:destination="@id/navigation_home"
+        app:popUpTo="@id/onboardingFragment"
+        app:popUpToInclusive="true" />
+    </fragment>
+
 
     <fragment
         android:id="@+id/navigation_home"
@@ -13,7 +42,6 @@
         <action
             android:id="@+id/action_home_to_chat"
             app:destination="@id/navigation_chat_actual" />
-
         <action
             android:id="@+id/action_navigation_home_to_navigation_dashboard"
             app:destination="@id/navigation_dashboard" />
