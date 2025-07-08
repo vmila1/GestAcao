@@ -7,4 +7,13 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="pink_gest">#DBA4A4</color>"
+    <color name="green_gest">#F3F6EF</color>
+    <color name="grey_gest">#F1ECEC</color>
+    <color name="suggestion_button_background_white">#FFFFFF</color>
+    <color name="suggestion_button_stroke_grey">#E0E0E0</color>
+    <color name="suggestion_button_text_black">#000000</color>
+    <color name="suggestion_button_ripple_grey">#40000000</color>
+    <color name="pink_button">#FF54A7</color>
+    <color name="mic_button_background_default">#E0E0E0</color> <color name="mic_button_background_active">#BBDEFB</color>
 </resources>

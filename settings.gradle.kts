@@ -8,6 +8,9 @@ pluginManagement {
             }
         }
         mavenCentral()
+        plugins {
+            id("com.google.secrets_gradle_plugin") version "0.5"
+        }
         gradlePluginPortal()
     }
 }

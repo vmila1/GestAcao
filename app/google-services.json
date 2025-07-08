@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "880544821104",
+    "project_id": "gestacao-d6eb8",
+    "storage_bucket": "gestacao-d6eb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:880544821104:android:9235c2695881c80dfce9b5",
+        "android_client_info": {
+          "package_name": "com.pjt.gestacao"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdHKliu8xbdwijT1nPpsHF4-E7aiMIT-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
