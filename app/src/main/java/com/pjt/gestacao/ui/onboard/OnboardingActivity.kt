@@ -212,13 +212,13 @@ fun SelectMonthScreen(navController: NavController) {
             }
             Button(
                 onClick = {
-                    val intent = Intent(context, MainActivity::class.java)
+                    val intent = Intent(context, GenderSelectionActivity::class.java)
                     context.startActivity(intent)
                     (context as? OnboardingActivity)?.finish()
                 },
                 enabled = selectedMonth != null
             ) {
-                Text(text = "Próximo >")
+                Text(text = "Próximo")
             }
         }
     }

@@ -69,4 +69,5 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.navigation.compose)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }
