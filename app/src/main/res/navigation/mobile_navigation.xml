@@ -3,61 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@id/entryFragment"> <fragment
-    android:id="@+id/entryFragment"
-    android:name="com.pjt.gestacao.ui.entry.EntryFragment"
-    android:label="Entrada"
-    tools:layout="@layout/fragment_entry">
-
-    <action
-        android:id="@+id/action_entryFragment_to_navigation_home"
-        app:destination="@id/navigation_home"
-        app:popUpTo="@id/entryFragment"
-        app:popUpToInclusive="true" />
-
-    <action
-        android:id="@+id/action_entryFragment_to_onboardingFragment"
-        app:destination="@id/onboardingFragment"
-        app:popUpTo="@id/entryFragment"
-        app:popUpToInclusive="true" />
-</fragment>
-
-    <fragment
-        android:id="@+id/onboardingFragment"
-        android:name="com.pjt.gestacao.ui.onboarding.OnboardingFragment"
-        android:label="Cadastro"
-        tools:layout="@layout/fragment_onboarding"> <action
-        android:id="@+id/action_onboardingFragment_to_navigation_home"
-        app:destination="@id/navigation_home"
-        app:popUpTo="@id/onboardingFragment"
-        app:popUpToInclusive="true" />
-    </fragment>
-
+    app:startDestination="@+id/navigation_home">
 
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.pjt.gestacao.ui.home.HomeFragment"
         android:label="@string/title_app"
         tools:layout="@layout/fragment_home">
+
         <action
             android:id="@+id/action_home_to_chat"
             app:destination="@id/navigation_chat_actual" />
-        <action
-            android:id="@+id/action_navigation_home_to_navigation_dashboard"
-            app:destination="@id/navigation_dashboard" />
     </fragment>
-
-    <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="com.pjt.gestacao.ui.dashboard.DashboardFragment"
-        android:label="@string/title_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
 
     <fragment
         android:id="@+id/navigation_chat_actual"
         android:name="com.pjt.gestacao.ui.ChatFragment"
         android:label="@string/title_chat"
         tools:layout="@layout/fragment_chat">
+
         <action
             android:id="@+id/action_chatActual_to_home"
             app:destination="@id/navigation_home"
@@ -70,5 +34,11 @@
         android:name="com.pjt.gestacao.ui.buscar.BuscarFragment"
         android:label="Buscar"
         tools:layout="@layout/fragment_buscar" />
+
+    <fragment
+        android:id="@+id/navigation_mapa"
+        android:name="com.pjt.gestacao.ui.mapa.MapaFragment"
+        android:label="Mapa"
+        tools:layout="@layout/fragment_mapa" />
 
 </navigation>

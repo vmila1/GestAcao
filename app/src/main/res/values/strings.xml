@@ -24,4 +24,10 @@
     <string name="desc_botao_voltar">Botão de voltar</string>
     <string name="app_name_title">GestAI</string>
     <string name="btn_prenatal">Pré-natal</string>
+    <string name="buscar">Buscar</string>
+    <string name="toque_para_saber_mais">Toque para saber mais</string>
+    <string name="textview">TextView</string>
+    <string name="buscar_local">Buscar local...</string>
+    <string name="posto_de_saude">Posto de Saúde</string>
+    <string name="title_mapa">Mapa</string>
 </resources>

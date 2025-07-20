@@ -68,7 +68,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:backgroundTint="@color/pink_gest"
-                    android:text="Toque para saber mais"
+                    android:text="@string/toque_para_saber_mais"
                     android:textAllCaps="false"
                     android:textColor="#FFFFFF" />
             </LinearLayout>
@@ -76,8 +76,6 @@
     </androidx.cardview.widget.CardView>
 
     <!-- Campo de dúvida -->
-
-
     <LinearLayout
         android:id="@+id/layoutGestAi"
         android:layout_width="match_parent"
@@ -182,7 +180,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat"
-                android:text="TextView"
+                android:text="@string/textview"
                 android:textAlignment="center" />
 
         </LinearLayout>
@@ -212,7 +210,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat"
-                android:text="TextView"
+                android:text="@string/textview"
                 android:textAlignment="center" />
 
         </LinearLayout>
@@ -241,7 +239,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat"
-                android:text="TextView"
+                android:text="@string/textview"
                 android:textAlignment="center" />
 
         </LinearLayout>
@@ -270,7 +268,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat"
-                android:text="TextView"
+                android:text="@string/textview"
                 android:textAlignment="center" />
 
         </LinearLayout>
@@ -299,7 +297,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/montserrat"
-                android:text="TextView"
+                android:text="@string/textview"
                 android:textAlignment="center" />
 
         </LinearLayout>
@@ -307,7 +305,6 @@
     </LinearLayout>
 
     <!-- Mapa -->
-
     <LinearLayout
         android:id="@+id/layoutMap"
         android:layout_width="0dp"
