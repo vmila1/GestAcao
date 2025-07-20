@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+    alias(libs.plugins.jetbrains.kotlin.compose)
     id("com.google.gms.google-services")
 }
 
@@ -44,6 +45,9 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.play.services.maps.v1820)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.maps.compose)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -57,10 +61,23 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
+    implementation(libs.androidx.activity.compose.v1101)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.location)
 }

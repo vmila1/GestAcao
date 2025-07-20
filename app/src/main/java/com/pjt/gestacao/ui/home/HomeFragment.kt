@@ -18,13 +18,14 @@ import com.google.android.gms.maps.model.LatLng
 import com.pjt.gestacao.MainActivity
 import com.pjt.gestacao.R
 import com.pjt.gestacao.ui.UserViewModel
+import com.google.firebase.Timestamp
+import java.util.Calendar
+import kotlin.math.min
 
 class HomeFragment : Fragment() {
 
-    // Obtém a instância do ViewModel compartilhado pela MainActivity
     private val userViewModel: UserViewModel by activityViewModels()
 
-    // Referências para os elementos da UI
     private lateinit var tvMeses: TextView
     private lateinit var tvMensagem: TextView
 
@@ -38,35 +39,23 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inicializa as Views
         tvMeses = view.findViewById(R.id.tvMeses)
         tvMensagem = view.findViewById(R.id.tvMensagem)
 
         setupButtons(view)
         setupMap(view, savedInstanceState)
 
-        // Configura os observadores para reagir às mudanças no ViewModel
         setupObservers()
 
-        // Pede ao ViewModel para carregar os dados da gestante.
-        // Isso só será chamado quando a Home for exibida, ou seja, o usuário já está logado.
         userViewModel.loadGestanteData()
     }
 
     private fun setupObservers() {
-        // 1. Observa o estado de carregamento para mostrar/esconder o ProgressBar
-        userViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            (activity as? MainActivity)?.setProgressBar(isLoading)
-        }
-
-        // 2. Observa os dados da gestante
+        // Observa os dados da gestante
         userViewModel.gestanteData.observe(viewLifecycleOwner) { dados ->
             if (dados != null) {
-                // Se os dados existem, atualiza a UI
                 updateUI(dados)
             } else {
-                // Isso não deveria acontecer nesse fluxo, mas é uma segurança.
-                // Indica que o usuário está logado mas não tem dados no Firestore.
                 Toast.makeText(requireContext(), "Dados da gestante não encontrados.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -74,17 +63,50 @@ class HomeFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun updateUI(dados: Map<String, Any>) {
-        val meses = dados["mesGestacao"] as? Long ?: 0
+        // Pega os dados salvos no Firebase
+        val mesInicial = dados["mesGestacaoInicial"] as? Long ?: 0
+        val dataCadastroTimestamp = dados["dataDoCadastro"] as? Timestamp
 
-        tvMeses.text = "$meses meses"
+        var mesAtual = mesInicial
 
-        tvMensagem.text = when (meses) {
+        if (dataCadastroTimestamp != null) {
+            // Converte a data do Firebase para um objeto Calendar
+            val dataCadastro = Calendar.getInstance()
+            dataCadastro.time = dataCadastroTimestamp.toDate()
+
+            // Pega a data atual
+            val hoje = Calendar.getInstance()
+
+            // Calcula a diferença de anos e meses
+            var anosPassados = hoje.get(Calendar.YEAR) - dataCadastro.get(Calendar.YEAR)
+            var mesesPassados = hoje.get(Calendar.MONTH) - dataCadastro.get(Calendar.MONTH)
+
+            // Se o dia atual for menor que o dia do cadastro, o mês atual não "completou"
+            if (hoje.get(Calendar.DAY_OF_MONTH) < dataCadastro.get(Calendar.DAY_OF_MONTH)) {
+                mesesPassados--
+            }
+
+            // Converte os anos em meses e soma tudo
+            val totalMesesPassados = (anosPassados * 12) + mesesPassados
+
+            // Soma os meses passados ao mês inicial
+            if (totalMesesPassados > 0) {
+                mesAtual += totalMesesPassados
+            }
+        }
+
+        // Garante que o mês de gestação não passe de 9
+        val mesFinal = min(mesAtual, 9L)
+
+        // Atualiza a UI com o mês calculado
+        tvMeses.text = "$mesFinal meses"
+
+        tvMensagem.text = when (mesFinal) {
             1L, 2L, 3L -> "Cuidados do primeiro trimestre!"
             4L, 5L, 6L -> "Aproveite o segundo trimestre!"
             7L, 8L, 9L -> "Reta final! Prepare-se para a chegada!"
             else -> "Bem-vinda a esta jornada especial!"
         }
-        // Lógicas aqui para o mapa, etc.
     }
 
     private fun setupButtons(view: View) {
