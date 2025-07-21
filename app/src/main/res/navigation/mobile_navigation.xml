@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_home_to_chat"
             app:destination="@id/navigation_chat_actual" />
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_info"
+            app:destination="@id/navigation_info" />
     </fragment>
 
     <fragment
@@ -40,5 +43,11 @@
         android:name="com.pjt.gestacao.ui.mapa.MapaFragment"
         android:label="Mapa"
         tools:layout="@layout/fragment_mapa" />
+
+    <fragment
+        android:id="@+id/navigation_info"
+        android:name="com.pjt.gestacao.ui.info.InfoFragment"
+        android:label="Info"
+        tools:layout="@layout/fragment_info" />
 
 </navigation>

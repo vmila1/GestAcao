@@ -1,13 +1,13 @@
 package com.pjt.gestacao.ui.mapa
 
-import android.content.Context
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.maps.model.LatLng
-import com.pjt.gestacao.BuildConfig
+import com.pjt.gestacao.R
 import com.pjt.gestacao.model.Place
 import com.pjt.gestacao.network.DirectionsApiService
 import com.pjt.gestacao.network.PlacesApiService
@@ -39,7 +39,7 @@ sealed interface LocationDetailsUiState {
     data class Error(val message: String) : LocationDetailsUiState
 }
 
-class MapViewModel : ViewModel() {
+class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState = _uiState.asStateFlow()
@@ -47,11 +47,11 @@ class MapViewModel : ViewModel() {
     private val placesApiService: PlacesApiService = RetrofitClient.placesInstance
     private val directionsApiService: DirectionsApiService = RetrofitClient.directionsInstance
 
-    /**
-     * Inicia a busca pela localização atual do usuário.
-     * Deve ser chamado pela UI quando a permissão for concedida.
-     */
-    fun fetchCurrentUserLocation(context: Context) {
+    // Obtém a chave da API a partir dos recursos de string (injetada pelo plugin)
+    private val apiKey = getApplication<Application>().resources.getString(R.string.google_maps_key)
+
+    fun fetchCurrentUserLocation() {
+        val context = getApplication<Application>().applicationContext
         try {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
             fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
@@ -59,12 +59,12 @@ class MapViewModel : ViewModel() {
                     if (location != null) {
                         val userLatLng = LatLng(location.latitude, location.longitude)
                         _uiState.update { it.copy(userLocation = userLatLng, isInitializing = false) }
-                        // Busca locais próximos assim que encontra o usuário
-                        findNearbyPlaces(userLatLng, "hospital") // Ex: busca hospitais inicialmente
+                        viewModelScope.launch {
+                            findNearbyPlaces(userLatLng, "hospital")
+                        }
                     }
                 }
         } catch (e: SecurityException) {
-            // Lidar com erro de permissão
             _uiState.update { it.copy(isInitializing = false) }
         }
     }
@@ -116,7 +116,7 @@ class MapViewModel : ViewModel() {
         val response = placesApiService.findNearbyPlaces(
             location = "${location.latitude},${location.longitude}",
             keyword = keyword,
-            apiKey = BuildConfig.MAPS_API_KEY // Use a chave de API do build config
+            apiKey = apiKey
         )
         val places = response.results.mapNotNull { result ->
             Place(
@@ -140,7 +140,7 @@ class MapViewModel : ViewModel() {
             val response = directionsApiService.getDirections(
                 origin = "${origin.latitude},${origin.longitude}",
                 destination = "${destinationLatLng.latitude},${destinationLatLng.longitude}",
-                apiKey = BuildConfig.MAPS_API_KEY
+                apiKey = apiKey
             )
             val points = response.routes.firstOrNull()?.overviewPolyline?.points
             if (points != null) {

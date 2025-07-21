@@ -22,10 +22,10 @@ class InstitutionAdapter(
         private val tvDistance: TextView    = view.findViewById(R.id.tvDistance)
 
         fun bind(inst: Institution) {
-            imgLogo.setImageResource(inst.logoResId)
+            imgLogo.setImageResource(inst.image)
             tvName.text     = inst.name
             tvType.text     = inst.type
-            tvDistance.text = inst.distance
+            tvDistance.text = inst.address
 
             view.setOnClickListener { onClick(inst) }
         }
