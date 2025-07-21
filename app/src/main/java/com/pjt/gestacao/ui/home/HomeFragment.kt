@@ -15,10 +15,9 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
-import com.pjt.gestacao.MainActivity
+import com.google.firebase.Timestamp
 import com.pjt.gestacao.R
 import com.pjt.gestacao.ui.UserViewModel
-import com.google.firebase.Timestamp
 import java.util.Calendar
 import kotlin.math.min
 
@@ -112,7 +111,7 @@ class HomeFragment : Fragment() {
     private fun setupButtons(view: View) {
         val botaoMaisInfo: Button = view.findViewById(R.id.btnSaibaMais)
         botaoMaisInfo.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_dashboard)
+            findNavController().navigate(R.id.action_navigation_home_to_navigation_info)
         }
         val botao1: ImageButton = view.findViewById(R.id.imageButton)
         val botao2: ImageButton = view.findViewById(R.id.imageButton6)
