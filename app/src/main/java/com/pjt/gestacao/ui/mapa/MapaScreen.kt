@@ -1,240 +1,293 @@
 package com.pjt.gestacao.ui.mapa
 
 import android.content.Intent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
+import com.pjt.gestacao.R
 import com.pjt.gestacao.model.Place
 import kotlinx.coroutines.launch
+
+// Cores personalizadas para o tema do mapa
+val PinkPrimary = Color(0xFFDBA4A4)
+val PinkLight = Color(0xFFFFF6F6)
+val TextColorPrimary = Color(0xFF333333)
+val TextColorSecondary = Color(0xFF666666)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
+
     val uiState by mapViewModel.uiState.collectAsState()
     val context = LocalContext.current
-
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    val cameraPositionState = rememberCameraPositionState()
 
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(uiState.initialLocation, 12f)
-    }
-
-    // Efeito para mover a câmera quando a localização do usuário for encontrada
-    LaunchedEffect(uiState.userLocation) {
-        uiState.userLocation?.let {
+    // Anima a câmera para a localização inicial quando carregada
+    LaunchedEffect(uiState.initialLocation) {
+        uiState.initialLocation?.let {
             cameraPositionState.animate(
-                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(it, 15f)
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(it, 14f)
             )
         }
     }
 
+    // Fecha o BottomSheet se o local selecionado for nulo
+    LaunchedEffect(uiState.selectedPlaceDetails) {
+        if (uiState.selectedPlaceDetails is LocationDetailsUiState.Idle && sheetState.isVisible) {
+            scope.launch { sheetState.hide() }
+        }
+    }
+
     Scaffold(
+        containerColor = PinkLight,
         topBar = {
-            MapSearchBar(
-                onSearch = { placeType ->
-                    mapViewModel.findAndRouteToNearest(placeType)
-                }
-            )
+            Column(modifier = Modifier.background(PinkLight)) {
+                MapHeader()
+                MapSearchBar(
+                    query = uiState.searchQuery,
+                    onQueryChange = { mapViewModel.onSearchQueryChanged(it) },
+                    onSearch = { mapViewModel.searchNearbyPlaces() }
+                )
+                FilterChips(
+                    selectedFilter = uiState.selectedFilter,
+                    onFilterSelected = { filter ->
+                        mapViewModel.onFilterChanged(filter)
+                        mapViewModel.searchNearbyPlaces()
+                    }
+                )
+            }
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = true), // Habilita o ponto azul da localização
-                uiSettings = MapUiSettings(zoomControlsEnabled = false)
-            ) {
-                // Adiciona os pinos dos locais no mapa
-                uiState.nearbyPlaces.forEach { place ->
-                    Marker(
-                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
-                        title = place.name,
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED),
-                        onClick = {
-                            mapViewModel.onMarkerClicked(place)
-                            true
+            if (uiState.isInitializing) {
+                CircularProgressIndicator(color = PinkPrimary)
+            } else {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(isMyLocationEnabled = true),
+                    uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = true)
+                ) {
+                    // Exibe os marcadores dos locais encontrados
+                    uiState.nearbyPlaces.forEach { place ->
+                        val iconRes = when (place.type) {
+                            "Hospitais ou maternidades" -> R.drawable.ic_hospital_marker
+                            "Postos de Saúde" -> R.drawable.ic_health_center_marker
+                            "ONGs de apoio a gestantes" -> R.drawable.ic_ong_marker
+                            else -> R.drawable.ic_default_marker
                         }
-                    )
-                }
-
-                // Desenha a rota no mapa se existir
-                if (uiState.routePoints.isNotEmpty()) {
-                    Polyline(
-                        points = uiState.routePoints,
-                        color = Color.Blue,
-                        width = 10f
-                    )
+                        Marker(
+                            state = MarkerState(position = LatLng(place.latitude, place.longitude)),
+                            title = place.name,
+                            icon = BitmapDescriptorFactory.fromResource(iconRes),
+                            onClick = {
+                                mapViewModel.onMarkerClicked(place)
+                                scope.launch { sheetState.expand() }
+                                true
+                            }
+                        )
+                    }
                 }
             }
 
-            // Exibe o BottomSheet se um local for selecionado
+            // Overlay de "Buscando..."
+            if (uiState.isSearching) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = "Buscando locais próximos...", color = Color.White)
+                    }
+                }
+            }
+
+            // BottomSheet para detalhes do local
             if (uiState.selectedPlaceDetails !is LocationDetailsUiState.Idle) {
                 ModalBottomSheet(
                     onDismissRequest = { mapViewModel.dismissModal() },
-                    sheetState = sheetState
+                    sheetState = sheetState,
+                    containerColor = Color.White
                 ) {
                     LocationDetailsBottomSheet(
                         state = uiState.selectedPlaceDetails,
                         onRouteClick = { place ->
-                            // Lança um Intent para o Google Maps traçar a rota
                             val gmmIntentUri = "google.navigation:q=${place.latitude},${place.longitude}".toUri()
                             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                             mapIntent.setPackage("com.google.android.apps.maps")
                             context.startActivity(mapIntent)
                         },
-                        onClose = {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    mapViewModel.dismissModal()
-                                }
-                            }
-                        }
+                        onClose = { mapViewModel.dismissModal() }
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+fun MapHeader() {
+    Text(
+        text = "Encontre ajuda perto de você",
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+        color = TextColorPrimary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        textAlign = TextAlign.Center
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapSearchBar(onSearch: (String) -> Unit) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val placeTypes = listOf("Hospitais", "Postos de Saúde", "ONGs de apoio a gestantes")
-    var selectedType by remember { mutableStateOf("") }
+fun MapSearchBar(query: String, onQueryChange: (String) -> Unit, onSearch: () -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Pesquisar por nome...") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(30.dp),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            containerColor = Color.White,
+            unfocusedBorderColor = Color.LightGray,
+            focusedBorderColor = PinkPrimary
+        ),
+        singleLine = true,
+        keyboardActions = KeyboardActions(onSearch = { onSearch() })
+    )
+}
 
-    Box(modifier = Modifier.padding(16.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = isExpanded,
-            onExpandedChange = { isExpanded = it }
-        ) {
-            TextField(
-                value = selectedType,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Buscar por tipo...") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
-                colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                shape = RoundedCornerShape(8.dp)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilterChips(selectedFilter: String, onFilterSelected: (String) -> Unit) {
+    val filters = listOf("Todos", "Hospitais ou maternidades", "Postos de Saúde", "ONGs de apoio a gestantes")
+    LazyRow(
+        modifier = Modifier.padding(vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filters) { filter ->
+            FilterChip(
+                selected = selectedFilter == filter,
+                onClick = { onFilterSelected(filter) },
+                label = { Text(filter) },
+                enabled = true, // CORREÇÃO: Parâmetro 'enabled' adicionado
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = PinkPrimary,
+                    selectedLabelColor = Color.White,
+                    containerColor = Color.White,
+                    labelColor = TextColorSecondary
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    borderColor = PinkPrimary,
+                    selectedBorderColor = Color.Transparent,
+                    enabled = true, // CORREÇÃO: Parâmetro 'enabled' adicionado
+                    selected = selectedFilter == filter // CORREÇÃO: Parâmetro 'selected' adicionado
+                )
             )
-            ExposedDropdownMenu(
-                expanded = isExpanded,
-                onDismissRequest = { isExpanded = false }
-            ) {
-                placeTypes.forEach { type ->
-                    DropdownMenuItem(
-                        text = { Text(type) },
-                        onClick = {
-                            selectedType = type
-                            isExpanded = false
-                            onSearch(type) // Chama a função de busca no ViewModel
-                        }
-                    )
-                }
-            }
         }
     }
 }
 
 @Composable
-fun LocationDetailsBottomSheet(
-    state: LocationDetailsUiState,
-    onRouteClick: (Place) -> Unit,
-    onClose: () -> Unit
-) {
+fun LocationDetailsBottomSheet(state: LocationDetailsUiState, onRouteClick: (Place) -> Unit, onClose: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 250.dp)
+            .defaultMinSize(minHeight = 250.dp)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
         when (state) {
-            is LocationDetailsUiState.Loading -> CircularProgressIndicator()
+            is LocationDetailsUiState.Loading -> CircularProgressIndicator(color = PinkPrimary)
             is LocationDetailsUiState.Success -> {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    // Puxador do BottomSheet
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(Color.LightGray)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // Cabeçalho com nome e botão de fechar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(state.place.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = onClose) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar")
-                        }
+                        Text(state.place.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextColorPrimary, modifier = Modifier.weight(1f))
+                        IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Fechar", tint = TextColorSecondary) }
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(state.place.type, fontSize = 16.sp, color = TextColorSecondary)
                     Spacer(Modifier.height(16.dp))
-                    Text("Horário de Funcionamento", fontWeight = FontWeight.Bold)
-                    Text(state.place.operatingHours ?: "Não informado")
+
+                    // Detalhes
+                    Text("Horário de Funcionamento:", fontWeight = FontWeight.Bold, color = TextColorPrimary)
+                    Text(state.place.operatingHours ?: "Não informado", color = TextColorSecondary)
                     Spacer(Modifier.height(24.dp))
+
+                    // Botão de Rota
                     Button(
                         onClick = { onRouteClick(state.place) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Traçar Rota")
+                        Text("Traçar Rota", fontSize = 16.sp)
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-            is LocationDetailsUiState.Error -> Text(state.message)
-            else -> {} // Não mostra nada no estado Idle
+            is LocationDetailsUiState.Error -> Text(state.message, color = Color.Red)
+            else -> {}
         }
     }
 }
