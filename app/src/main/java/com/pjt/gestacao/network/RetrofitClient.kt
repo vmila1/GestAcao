@@ -22,15 +22,15 @@ object RetrofitClient {
     // Cliente OkHttp com timeouts personalizados para evitar falhas em redes lentas
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(45, TimeUnit.SECONDS)
+        .readTimeout(45, TimeUnit.SECONDS)
+        .writeTimeout(45, TimeUnit.SECONDS)
         .build()
 
 
     // --- Configuração para a API do Chat (Flask via Ngrok) ---
 
-    private const val FLASK_BASE_URL = "https://dad3-131-108-86-151.ngrok-free.app/"
+    private const val FLASK_BASE_URL = "https://eager-easily-airedale.ngrok-free.app/"
 
     private val flaskRetrofit: Retrofit by lazy {
         Retrofit.Builder()

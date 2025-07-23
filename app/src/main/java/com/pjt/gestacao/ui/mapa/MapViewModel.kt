@@ -1,13 +1,17 @@
 package com.pjt.gestacao.ui.mapa
 
 import android.app.Application
+import android.location.Location
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.pjt.gestacao.BuildConfig
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.maps.model.LatLng
-import com.pjt.gestacao.R
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.firebase.firestore.GeoPoint
+import com.pjt.gestacao.FirebaseUtils
 import com.pjt.gestacao.model.Place
 import com.pjt.gestacao.network.DirectionsApiService
 import com.pjt.gestacao.network.PlacesApiService
@@ -17,21 +21,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Define todos os dados que a UI do Mapa precisa para se desenhar.
- */
 data class MapUiState(
     val isInitializing: Boolean = true,
+    val isSearching: Boolean = false,
     val userLocation: LatLng? = null,
     val nearbyPlaces: List<Place> = emptyList(),
     val selectedPlaceDetails: LocationDetailsUiState = LocationDetailsUiState.Idle,
     val routePoints: List<LatLng> = emptyList(),
-    val initialLocation: LatLng = LatLng(-8.0238, -34.9567)
+    val initialLocation: LatLng? = null,
+    val searchQuery: String = "",
+    val selectedFilter: String = "Todos"
 )
 
-/**
- * Define os estados do modal de detalhes do local.
- */
 sealed interface LocationDetailsUiState {
     object Idle : LocationDetailsUiState
     object Loading : LocationDetailsUiState
@@ -46,115 +47,165 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val placesApiService: PlacesApiService = RetrofitClient.placesInstance
     private val directionsApiService: DirectionsApiService = RetrofitClient.directionsInstance
+    private val apiKey = BuildConfig.Maps_key
 
-    // Obtém a chave da API a partir dos recursos de string (injetada pelo plugin)
-    private val apiKey = getApplication<Application>().resources.getString(R.string.google_maps_key)
+    init {
+        loadInitialLocationFromFirebase()
+    }
 
-    fun fetchCurrentUserLocation() {
-        val context = getApplication<Application>().applicationContext
+    private fun loadInitialLocationFromFirebase() {
+        FirebaseUtils.buscarDadosGestante(
+            onSuccess = { dados ->
+                val geoPoint = dados?.get("ultimaLocalizacao") as? GeoPoint
+                val firebaseLocation = geoPoint?.let { LatLng(it.latitude, it.longitude) }
+                _uiState.update { it.copy(initialLocation = firebaseLocation ?: LatLng(-8.0476, -34.8770)) }
+                fetchCurrentUserLocation()
+            },
+            onFailure = {
+                _uiState.update { it.copy(initialLocation = LatLng(-8.0476, -34.8770)) }
+                fetchCurrentUserLocation()
+            }
+        )
+    }
+
+    internal fun fetchCurrentUserLocation() {
         try {
-            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplication())
             fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
                 .addOnSuccessListener { location ->
                     if (location != null) {
                         val userLatLng = LatLng(location.latitude, location.longitude)
                         _uiState.update { it.copy(userLocation = userLatLng, isInitializing = false) }
-                        viewModelScope.launch {
-                            findNearbyPlaces(userLatLng, "hospital")
-                        }
+                        // Não fazemos mais busca automática aqui para evitar sobrecarga
+                    } else {
+                        _uiState.update { it.copy(isInitializing = false) }
                     }
+                }.addOnFailureListener {
+                    _uiState.update { it.copy(isInitializing = false) }
                 }
         } catch (e: SecurityException) {
             _uiState.update { it.copy(isInitializing = false) }
         }
     }
 
-    /**
-     * Busca locais de um certo tipo e traça a rota para o mais próximo.
-     */
-    fun findAndRouteToNearest(placeType: String) {
-        val userLocation = _uiState.value.userLocation ?: return
+    fun onFilterChanged(filter: String) {
+        _uiState.update { it.copy(selectedFilter = filter, routePoints = emptyList()) }
+        searchNearbyPlaces()
+    }
 
-        val keyword = when (placeType) {
-            "Hospitais" -> "hospital"
-            "Postos de Saúde" -> "posto de saude"
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun searchNearbyPlaces() {
+        val currentState = _uiState.value
+        val userLocation = currentState.userLocation ?: return
+
+        val keyword = when (currentState.selectedFilter) {
+            "Hospitais ou maternidades" -> "hospital OR maternidade OR pronto socorro"
+            "Postos de Saúde" -> "posto de saude OR UBS OR UPA OR samu"
             "ONGs de apoio a gestantes" -> "ong apoio gestante"
-            else -> ""
+            // O "Todos" agora é a junção de todos os termos importantes
+            else -> "hospital OR maternidade OR pronto socorro OR posto de saude OR UBS OR UPA OR samu OR ong apoio gestante"
+        }
+
+        val finalQuery = "${currentState.searchQuery} $keyword".trim()
+
+        if (finalQuery.isBlank()) {
+            _uiState.update { it.copy(nearbyPlaces = emptyList(), isSearching = false) }
+            return
         }
 
         viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true, nearbyPlaces = emptyList()) }
             try {
-                // Busca os locais
-                val places = findNearbyPlaces(userLocation, keyword)
-                if (places.isNotEmpty()) {
-                    // Encontra o mais próximo (neste exemplo, o primeiro da lista)
-                    val nearestPlace = places.first()
-                    // Traça a rota
-                    traceRouteToPlace(nearestPlace)
+                val response = placesApiService.findNearbyPlaces(
+                    location = "${userLocation.latitude},${userLocation.longitude}",
+                    keyword = finalQuery,
+                    apiKey = apiKey
+                )
+                val places = response.results.mapNotNull { result ->
+                    Place(
+                        id = result.placeId, name = result.name,
+                        type = result.types.firstOrNull() ?: "Local",
+                        latitude = result.geometry.location.lat, longitude = result.geometry.location.lng,
+                        operatingHours = if (result.openingHours?.openNow == true) "Aberto agora" else "Verificar horário"
+                    )
                 }
+
+                // --- INÍCIO DA CORREÇÃO ---
+
+                if (places.isNotEmpty()) {
+                    // 1. Limita o número de resultados para evitar sobrecarga na UI
+                    val limitedPlaces = places.take(20)
+
+                    // 2. Encontra o local mais próximo dentro da lista limitada
+                    val nearestPlace = findNearestPlace(userLocation, limitedPlaces)
+
+                    // 3. Atualiza a UI com os marcadores limitados
+                    _uiState.update { it.copy(nearbyPlaces = limitedPlaces) }
+
+                    // 4. Se encontrou um local próximo, traça a rota até ele
+                    nearestPlace?.let { traceRouteTo(it) }
+
+                } else {
+                    _uiState.update { it.copy(nearbyPlaces = emptyList()) }
+                }
+
+                // --- FIM DA CORREÇÃO ---
+
             } catch (e: Exception) {
-                // Lidar com erro
+                Log.e("MapViewModel", "Erro na busca: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isSearching = false) }
             }
         }
     }
 
-    /**
-     * Chamado quando o usuário clica em um pino no mapa.
-     */
     fun onMarkerClicked(place: Place) {
         _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Success(place)) }
     }
 
-    /**
-     * Fecha o modal de detalhes.
-     */
+    fun traceRouteTo(destination: Place) {
+        val origin = _uiState.value.userLocation ?: return
+        val destinationLatLng = LatLng(destination.latitude, destination.longitude)
+        viewModelScope.launch {
+            try {
+                val response = directionsApiService.getDirections(
+                    origin = "${origin.latitude},${origin.longitude}",
+                    destination = "${destinationLatLng.latitude},${destinationLatLng.longitude}",
+                    apiKey = apiKey
+                )
+                val points = response.routes.firstOrNull()?.overviewPolyline?.points
+                if (points != null) {
+                    val decodedPath = decodePolyline(points)
+                    _uiState.update { it.copy(routePoints = decodedPath) }
+                }
+            } catch (e: Exception) {
+                Log.e("MapViewModel", "Erro ao traçar rota: ${e.message}")
+            }
+        }
+    }
+
+    // ✅ NOVA FUNÇÃO AUXILIAR PARA ENCONTRAR O LOCAL MAIS PRÓXIMO
+    private fun findNearestPlace(userLocation: LatLng, places: List<Place>): Place? {
+        return places.minByOrNull { place ->
+            val placeLocation = Location("place_location").apply {
+                latitude = place.latitude
+                longitude = place.longitude
+            }
+            val userLoc = Location("user_location").apply {
+                latitude = userLocation.latitude
+                longitude = userLocation.longitude
+            }
+            userLoc.distanceTo(placeLocation) // Retorna a distância em metros
+        }
+    }
+
     fun dismissModal() {
         _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Idle) }
     }
 
-    private suspend fun findNearbyPlaces(location: LatLng, keyword: String): List<Place> {
-        val response = placesApiService.findNearbyPlaces(
-            location = "${location.latitude},${location.longitude}",
-            keyword = keyword,
-            apiKey = apiKey
-        )
-        val places = response.results.mapNotNull { result ->
-            Place(
-                id = result.placeId,
-                name = result.name,
-                type = keyword,
-                latitude = result.geometry.location.lat,
-                longitude = result.geometry.location.lng,
-                operatingHours = if (result.openingHours?.openNow == true) "Aberto agora" else "Verificar horário"
-            )
-        }
-        _uiState.update { it.copy(nearbyPlaces = it.nearbyPlaces + places) }
-        return places
-    }
-
-    private suspend fun traceRouteToPlace(destination: Place) {
-        val origin = _uiState.value.userLocation ?: return
-        val destinationLatLng = LatLng(destination.latitude, destination.longitude)
-
-        try {
-            val response = directionsApiService.getDirections(
-                origin = "${origin.latitude},${origin.longitude}",
-                destination = "${destinationLatLng.latitude},${destinationLatLng.longitude}",
-                apiKey = apiKey
-            )
-            val points = response.routes.firstOrNull()?.overviewPolyline?.points
-            if (points != null) {
-                val decodedPath = decodePolyline(points)
-                _uiState.update { it.copy(routePoints = decodedPath) }
-            }
-        } catch (e: Exception) {
-            // Lidar com erro de rota
-        }
-    }
-
-    /**
-     * Função auxiliar para decodificar a polyline da API do Google Directions.
-     */
     private fun decodePolyline(encoded: String): List<LatLng> {
         val poly = ArrayList<LatLng>()
         var index = 0
