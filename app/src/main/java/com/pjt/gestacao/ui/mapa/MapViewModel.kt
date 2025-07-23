@@ -1,13 +1,16 @@
 package com.pjt.gestacao.ui.mapa
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.GeoPoint
 import com.pjt.gestacao.R
+import com.pjt.gestacao.FirebaseUtils
 import com.pjt.gestacao.model.Place
 import com.pjt.gestacao.network.DirectionsApiService
 import com.pjt.gestacao.network.PlacesApiService
@@ -17,21 +20,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Define todos os dados que a UI do Mapa precisa para se desenhar.
- */
+// Estado da UI para a tela do mapa
 data class MapUiState(
     val isInitializing: Boolean = true,
+    val isSearching: Boolean = false,
     val userLocation: LatLng? = null,
     val nearbyPlaces: List<Place> = emptyList(),
     val selectedPlaceDetails: LocationDetailsUiState = LocationDetailsUiState.Idle,
     val routePoints: List<LatLng> = emptyList(),
-    val initialLocation: LatLng = LatLng(-8.0238, -34.9567)
+    val initialLocation: LatLng? = null,
+    val searchQuery: String = "", // Estado para a barra de busca
+    val selectedFilter: String = "Todos" // Estado para o filtro selecionado
 )
 
-/**
- * Define os estados do modal de detalhes do local.
- */
+// Estados para o painel de detalhes do local
 sealed interface LocationDetailsUiState {
     object Idle : LocationDetailsUiState
     object Loading : LocationDetailsUiState
@@ -46,22 +48,46 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val placesApiService: PlacesApiService = RetrofitClient.placesInstance
     private val directionsApiService: DirectionsApiService = RetrofitClient.directionsInstance
+    private val apiKey = getApplication<Application>().resources.getString(R.string.google_api_key)
 
-    // Obtém a chave da API a partir dos recursos de string (injetada pelo plugin)
-    private val apiKey = getApplication<Application>().resources.getString(R.string.google_maps_key)
+    init {
+        loadInitialLocationFromFirebase()
+        fetchCurrentUserLocation()
+    }
 
+    // Carrega a localização inicial salva no Firebase
+    private fun loadInitialLocationFromFirebase() {
+        FirebaseUtils.buscarDadosGestante(
+            onSuccess = { dados ->
+                val geoPoint = dados?.get("ultimaLocalizacao") as? GeoPoint
+                val firebaseLocation = geoPoint?.let { LatLng(it.latitude, it.longitude) }
+                _uiState.update {
+                    it.copy(
+                        initialLocation = firebaseLocation ?: LatLng(-8.0476, -34.8770), // Fallback para Recife
+                        isInitializing = false
+                    )
+                }
+            },
+            onFailure = {
+                _uiState.update {
+                    it.copy(
+                        initialLocation = LatLng(-8.0476, -34.8770), // Fallback
+                        isInitializing = false
+                    )
+                }
+            }
+        )
+    }
+
+    // Busca a localização atual do usuário
     fun fetchCurrentUserLocation() {
-        val context = getApplication<Application>().applicationContext
         try {
-            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplication())
             fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token)
                 .addOnSuccessListener { location ->
                     if (location != null) {
                         val userLatLng = LatLng(location.latitude, location.longitude)
-                        _uiState.update { it.copy(userLocation = userLatLng, isInitializing = false) }
-                        viewModelScope.launch {
-                            findNearbyPlaces(userLatLng, "hospital")
-                        }
+                        _uiState.update { it.copy(userLocation = userLatLng) }
                     }
                 }
         } catch (e: SecurityException) {
@@ -69,121 +95,90 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Busca locais de um certo tipo e traça a rota para o mais próximo.
-     */
-    fun findAndRouteToNearest(placeType: String) {
-        val userLocation = _uiState.value.userLocation ?: return
+    // Atualiza o estado da query de busca
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
 
-        val keyword = when (placeType) {
-            "Hospitais" -> "hospital"
-            "Postos de Saúde" -> "posto de saude"
+    // Atualiza o estado do filtro selecionado
+    fun onFilterChanged(filter: String) {
+        _uiState.update { it.copy(selectedFilter = filter) }
+    }
+
+    // Busca locais próximos com base na query e no filtro
+    fun searchNearbyPlaces() {
+        val currentState = _uiState.value
+        val userLocation = currentState.userLocation ?: run {
+            Toast.makeText(getApplication(), "Localização do usuário ainda não encontrada.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val keyword = when (currentState.selectedFilter) {
+            "Hospitais ou maternidades" -> "hospital maternidade"
+            "Postos de Saúde" -> "posto de saude UBS"
             "ONGs de apoio a gestantes" -> "ong apoio gestante"
-            else -> ""
+            else -> "" // "Todos"
+        }
+
+        // Combina a query de texto com a palavra-chave do filtro
+        val finalQuery = "${currentState.searchQuery} $keyword".trim()
+        if (finalQuery.isBlank()) {
+            _uiState.update { it.copy(nearbyPlaces = emptyList()) }
+            return
         }
 
         viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true, nearbyPlaces = emptyList(), routePoints = emptyList()) }
             try {
-                // Busca os locais
-                val places = findNearbyPlaces(userLocation, keyword)
-                if (places.isNotEmpty()) {
-                    // Encontra o mais próximo (neste exemplo, o primeiro da lista)
-                    val nearestPlace = places.first()
-                    // Traça a rota
-                    traceRouteToPlace(nearestPlace)
-                }
+                findNearbyPlaces(userLocation, finalQuery)
             } catch (e: Exception) {
-                // Lidar com erro
+                Toast.makeText(getApplication(), "Erro ao buscar locais.", Toast.LENGTH_SHORT).show()
+            } finally {
+                _uiState.update { it.copy(isSearching = false) }
             }
         }
     }
 
-    /**
-     * Chamado quando o usuário clica em um pino no mapa.
-     */
+    // Busca detalhes de um local quando o marcador é clicado
     fun onMarkerClicked(place: Place) {
-        _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Success(place)) }
+        viewModelScope.launch {
+            _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Loading) }
+            try {
+                val detailsResponse = placesApiService.getPlaceDetails(place.id, apiKey = apiKey)
+                val details = detailsResponse.result
+                val detailedPlace = place.copy(
+                    operatingHours = details.openingHours?.weekdayText?.joinToString("\n") ?: "Horário não informado",
+                )
+                _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Success(detailedPlace)) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Error("Não foi possível carregar os detalhes.")) }
+            }
+        }
     }
 
-    /**
-     * Fecha o modal de detalhes.
-     */
+    // Fecha o painel de detalhes
     fun dismissModal() {
         _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Idle) }
     }
 
-    private suspend fun findNearbyPlaces(location: LatLng, keyword: String): List<Place> {
+    // Função interna para chamar a API do Google Places
+    private suspend fun findNearbyPlaces(location: LatLng, query: String) {
         val response = placesApiService.findNearbyPlaces(
             location = "${location.latitude},${location.longitude}",
-            keyword = keyword,
+            keyword = query,
             apiKey = apiKey
         )
         val places = response.results.mapNotNull { result ->
             Place(
                 id = result.placeId,
                 name = result.name,
-                type = keyword,
+                // Associa o tipo baseado no filtro atual para o ícone
+                type = _uiState.value.selectedFilter.takeIf { it != "Todos" } ?: result.types.firstOrNull() ?: "Local",
                 latitude = result.geometry.location.lat,
                 longitude = result.geometry.location.lng,
                 operatingHours = if (result.openingHours?.openNow == true) "Aberto agora" else "Verificar horário"
             )
         }
-        _uiState.update { it.copy(nearbyPlaces = it.nearbyPlaces + places) }
-        return places
-    }
-
-    private suspend fun traceRouteToPlace(destination: Place) {
-        val origin = _uiState.value.userLocation ?: return
-        val destinationLatLng = LatLng(destination.latitude, destination.longitude)
-
-        try {
-            val response = directionsApiService.getDirections(
-                origin = "${origin.latitude},${origin.longitude}",
-                destination = "${destinationLatLng.latitude},${destinationLatLng.longitude}",
-                apiKey = apiKey
-            )
-            val points = response.routes.firstOrNull()?.overviewPolyline?.points
-            if (points != null) {
-                val decodedPath = decodePolyline(points)
-                _uiState.update { it.copy(routePoints = decodedPath) }
-            }
-        } catch (e: Exception) {
-            // Lidar com erro de rota
-        }
-    }
-
-    /**
-     * Função auxiliar para decodificar a polyline da API do Google Directions.
-     */
-    private fun decodePolyline(encoded: String): List<LatLng> {
-        val poly = ArrayList<LatLng>()
-        var index = 0
-        val len = encoded.length
-        var lat = 0
-        var lng = 0
-        while (index < len) {
-            var b: Int
-            var shift = 0
-            var result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or (b and 0x1f shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-            lat += dlat
-            shift = 0
-            result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or (b and 0x1f shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-            lng += dlng
-            val p = LatLng(lat.toDouble() / 1E5, lng.toDouble() / 1E5)
-            poly.add(p)
-        }
-        return poly
+        _uiState.update { it.copy(nearbyPlaces = places) }
     }
 }
