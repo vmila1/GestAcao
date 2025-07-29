@@ -18,17 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import com.pjt.gestacao.R
 import com.pjt.gestacao.model.Place
 import kotlinx.coroutines.launch
 
@@ -101,21 +98,23 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                 ) {
                     // Exibe os marcadores dos locais encontrados
                     uiState.nearbyPlaces.forEach { place ->
-                        val iconRes = when (place.type) {
-                            "Hospitais ou maternidades" -> R.drawable.ic_hospital_marker
-                            "Postos de Saúde" -> R.drawable.ic_health_center_marker
-                            "ONGs de apoio a gestantes" -> R.drawable.ic_ong_marker
-                            else -> R.drawable.ic_default_marker
-                        }
                         Marker(
                             state = MarkerState(position = LatLng(place.latitude, place.longitude)),
                             title = place.name,
-                            icon = BitmapDescriptorFactory.fromResource(iconRes),
                             onClick = {
                                 mapViewModel.onMarkerClicked(place)
                                 scope.launch { sheetState.expand() }
                                 true
                             }
+                        )
+                    }
+
+                    // Adiciona a Polyline para desenhar a rota no mapa
+                    if (uiState.routePoints.isNotEmpty()) {
+                        Polyline(
+                            points = uiState.routePoints,
+                            color = PinkPrimary, // Use a cor do tema
+                            width = 15f
                         )
                     }
                 }
@@ -149,6 +148,10 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                     LocationDetailsBottomSheet(
                         state = uiState.selectedPlaceDetails,
                         onRouteClick = { place ->
+                            // Pede ao ViewModel para buscar e desenhar a rota
+                            mapViewModel.getDirectionsToPlace(place)
+
+                            // Abre o Google Maps para navegação passo a passo
                             val gmmIntentUri = "google.navigation:q=${place.latitude},${place.longitude}".toUri()
                             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                             mapIntent.setPackage("com.google.android.apps.maps")
@@ -212,7 +215,7 @@ fun FilterChips(selectedFilter: String, onFilterSelected: (String) -> Unit) {
                 selected = selectedFilter == filter,
                 onClick = { onFilterSelected(filter) },
                 label = { Text(filter) },
-                enabled = true, // CORREÇÃO: Parâmetro 'enabled' adicionado
+                enabled = true,
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = PinkPrimary,
                     selectedLabelColor = Color.White,
@@ -222,8 +225,8 @@ fun FilterChips(selectedFilter: String, onFilterSelected: (String) -> Unit) {
                 border = FilterChipDefaults.filterChipBorder(
                     borderColor = PinkPrimary,
                     selectedBorderColor = Color.Transparent,
-                    enabled = true, // CORREÇÃO: Parâmetro 'enabled' adicionado
-                    selected = selectedFilter == filter // CORREÇÃO: Parâmetro 'selected' adicionado
+                    enabled = true,
+                    selected = selectedFilter == filter
                 )
             )
         }
@@ -243,7 +246,6 @@ fun LocationDetailsBottomSheet(state: LocationDetailsUiState, onRouteClick: (Pla
             is LocationDetailsUiState.Loading -> CircularProgressIndicator(color = PinkPrimary)
             is LocationDetailsUiState.Success -> {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Puxador do BottomSheet
                     Box(
                         modifier = Modifier
                             .width(40.dp)
@@ -254,7 +256,6 @@ fun LocationDetailsBottomSheet(state: LocationDetailsUiState, onRouteClick: (Pla
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    // Cabeçalho com nome e botão de fechar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -267,12 +268,16 @@ fun LocationDetailsBottomSheet(state: LocationDetailsUiState, onRouteClick: (Pla
                     Text(state.place.type, fontSize = 16.sp, color = TextColorSecondary)
                     Spacer(Modifier.height(16.dp))
 
-                    // Detalhes
+                    Text("Endereço:", fontWeight = FontWeight.Bold, color = TextColorPrimary)
+                    Text(state.place.address ?: "Não informado", color = TextColorSecondary)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Telefone:", fontWeight = FontWeight.Bold, color = TextColorPrimary)
+                    Text(state.place.phoneNumber ?: "Não informado", color = TextColorSecondary)
+                    Spacer(Modifier.height(8.dp))
                     Text("Horário de Funcionamento:", fontWeight = FontWeight.Bold, color = TextColorPrimary)
                     Text(state.place.operatingHours ?: "Não informado", color = TextColorSecondary)
                     Spacer(Modifier.height(24.dp))
 
-                    // Botão de Rota
                     Button(
                         onClick = { onRouteClick(state.place) },
                         modifier = Modifier

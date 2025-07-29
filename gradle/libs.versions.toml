@@ -1,6 +1,6 @@
 [versions]
 activityComposeVersion = "1.10.1"
-agp = "8.11.1"
+agp = "8.10.1"
 androidxNavigationUiKtx = "2.7.7"
 appcompatVersion = "1.7.0"
 composeBomVersion = "2025.07.00"

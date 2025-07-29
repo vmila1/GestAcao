@@ -1,20 +1,23 @@
 package com.pjt.gestacao.ui.mapa
 
 import android.app.Application
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.firestore.GeoPoint
-import com.pjt.gestacao.R
+import com.pjt.gestacao.BuildConfig
 import com.pjt.gestacao.FirebaseUtils
 import com.pjt.gestacao.model.Place
 import com.pjt.gestacao.network.DirectionsApiService
 import com.pjt.gestacao.network.PlacesApiService
 import com.pjt.gestacao.network.RetrofitClient
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -29,8 +32,8 @@ data class MapUiState(
     val selectedPlaceDetails: LocationDetailsUiState = LocationDetailsUiState.Idle,
     val routePoints: List<LatLng> = emptyList(),
     val initialLocation: LatLng? = null,
-    val searchQuery: String = "", // Estado para a barra de busca
-    val selectedFilter: String = "Todos" // Estado para o filtro selecionado
+    val searchQuery: String = "",
+    val selectedFilter: String = "Todos"
 )
 
 // Estados para o painel de detalhes do local
@@ -48,14 +51,15 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val placesApiService: PlacesApiService = RetrofitClient.placesInstance
     private val directionsApiService: DirectionsApiService = RetrofitClient.directionsInstance
-    private val apiKey = getApplication<Application>().resources.getString(R.string.google_api_key)
+    private val apiKey = BuildConfig.Maps_key
+
+    private var searchJob: Job? = null
 
     init {
         loadInitialLocationFromFirebase()
         fetchCurrentUserLocation()
     }
 
-    // Carrega a localização inicial salva no Firebase
     private fun loadInitialLocationFromFirebase() {
         FirebaseUtils.buscarDadosGestante(
             onSuccess = { dados ->
@@ -63,7 +67,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 val firebaseLocation = geoPoint?.let { LatLng(it.latitude, it.longitude) }
                 _uiState.update {
                     it.copy(
-                        initialLocation = firebaseLocation ?: LatLng(-8.0476, -34.8770), // Fallback para Recife
+                        initialLocation = firebaseLocation ?: LatLng(-8.0476, -34.8770), // Fallback
                         isInitializing = false
                     )
                 }
@@ -79,7 +83,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    // Busca a localização atual do usuário
     fun fetchCurrentUserLocation() {
         try {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplication())
@@ -95,32 +98,35 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Atualiza o estado da query de busca
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(500L)
+            searchNearbyPlaces()
+        }
     }
 
-    // Atualiza o estado do filtro selecionado
     fun onFilterChanged(filter: String) {
         _uiState.update { it.copy(selectedFilter = filter) }
+        searchNearbyPlaces()
     }
 
-    // Busca locais próximos com base na query e no filtro
     fun searchNearbyPlaces() {
         val currentState = _uiState.value
-        val userLocation = currentState.userLocation ?: run {
-            Toast.makeText(getApplication(), "Localização do usuário ainda não encontrada.", Toast.LENGTH_SHORT).show()
+        val userLocation = currentState.userLocation
+        if (userLocation == null) {
             return
         }
 
         val keyword = when (currentState.selectedFilter) {
             "Hospitais ou maternidades" -> "hospital maternidade"
             "Postos de Saúde" -> "posto de saude UBS"
-            "ONGs de apoio a gestantes" -> "ong apoio gestante"
-            else -> "" // "Todos"
+            "ONGs de apoio a gestantes" -> "ONG de apoio para gestantes"
+            else -> ""
         }
 
-        // Combina a query de texto com a palavra-chave do filtro
         val finalQuery = "${currentState.searchQuery} $keyword".trim()
         if (finalQuery.isBlank()) {
             _uiState.update { it.copy(nearbyPlaces = emptyList()) }
@@ -139,15 +145,16 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Busca detalhes de um local quando o marcador é clicado
     fun onMarkerClicked(place: Place) {
         viewModelScope.launch {
-            _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Loading) }
+            _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Loading, routePoints = emptyList()) }
             try {
                 val detailsResponse = placesApiService.getPlaceDetails(place.id, apiKey = apiKey)
                 val details = detailsResponse.result
                 val detailedPlace = place.copy(
-                    operatingHours = details.openingHours?.weekdayText?.joinToString("\n") ?: "Horário não informado",
+                    address = details.vicinity ?: "Endereço não informado",
+                    phoneNumber = details.formattedPhoneNumber ?: "Telefone não informado",
+                    operatingHours = details.openingHours?.weekdayText?.joinToString("\n") ?: "Horário não informado"
                 )
                 _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Success(detailedPlace)) }
             } catch (e: Exception) {
@@ -156,29 +163,84 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Fecha o painel de detalhes
     fun dismissModal() {
-        _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Idle) }
+        _uiState.update { it.copy(selectedPlaceDetails = LocationDetailsUiState.Idle, routePoints = emptyList()) }
     }
 
-    // Função interna para chamar a API do Google Places
     private suspend fun findNearbyPlaces(location: LatLng, query: String) {
         val response = placesApiService.findNearbyPlaces(
             location = "${location.latitude},${location.longitude}",
-            keyword = query,
+            query = query,
             apiKey = apiKey
         )
+
+        if (response.results.isEmpty()) {
+            Toast.makeText(getApplication(), "Nenhum local encontrado para sua busca.", Toast.LENGTH_LONG).show()
+        }
+
         val places = response.results.mapNotNull { result ->
             Place(
                 id = result.placeId,
                 name = result.name,
-                // Associa o tipo baseado no filtro atual para o ícone
                 type = _uiState.value.selectedFilter.takeIf { it != "Todos" } ?: result.types.firstOrNull() ?: "Local",
                 latitude = result.geometry.location.lat,
                 longitude = result.geometry.location.lng,
-                operatingHours = if (result.openingHours?.openNow == true) "Aberto agora" else "Verificar horário"
+                address = result.vicinity
             )
         }
         _uiState.update { it.copy(nearbyPlaces = places) }
+    }
+
+    fun getDirectionsToPlace(place: Place) {
+        viewModelScope.launch {
+            traceRouteToPlace(place)
+        }
+    }
+
+    private suspend fun traceRouteToPlace(destination: Place) {
+        val origin = _uiState.value.userLocation ?: return
+        try {
+            val response = directionsApiService.getDirections(
+                origin = "${origin.latitude},${origin.longitude}",
+                destination = "${destination.latitude},${destination.longitude}",
+                apiKey = apiKey
+            )
+            response.routes.firstOrNull()?.overviewPolyline?.points?.let {
+                _uiState.update { ui -> ui.copy(routePoints = decodePolyline(it)) }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(getApplication(), "Não foi possível traçar a rota.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+            poly.add(LatLng(lat.toDouble() / 1E5, lng.toDouble() / 1E5))
+        }
+        return poly
     }
 }
