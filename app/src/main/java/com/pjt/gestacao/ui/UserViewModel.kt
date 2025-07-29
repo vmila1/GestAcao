@@ -8,7 +8,7 @@ import com.pjt.gestacao.FirebaseUtils
 
 // Possíveis estados do usuário para a UI reagir durante o fluxo de entrada.
 enum class UserState {
-    UNKNOWN,          // Estado inicial
+    UNKNOWN,          // Estado inicial, aguardando ação.
     AUTHENTICATING,   // Processando login anônimo ou buscando dados.
     NEEDS_ONBOARDING, // Usuário autenticado, mas sem dados no Firestore. Deve ir para o onboarding.
     LOGGED_IN,        // Usuário autenticado e com dados. Pode ir para a Home.
@@ -27,35 +27,45 @@ class UserViewModel : ViewModel() {
     private val _gestanteData = MutableLiveData<Map<String, Any>?>()
     val gestanteData: LiveData<Map<String, Any>?> = _gestanteData
 
-    // Verifica se o usuário já está logado anonimamente e se possui dados no Firestore.
-    fun checkUserStatus() {
+
+    // Inicia o processo de login anônimo e verificação de dados.
+    fun signInAndProceed() {
         _userState.value = UserState.AUTHENTICATING
 
-        if (auth.currentUser == null) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
             // Novo usuário. Tenta fazer o login anônimo.
             auth.signInAnonymously()
                 .addOnSuccessListener {
+                    // Após o login, o usuário definitivamente precisa do onboarding.
                     _userState.value = UserState.NEEDS_ONBOARDING
                 }
                 .addOnFailureListener {
                     _userState.value = UserState.AUTH_ERROR
                 }
         } else {
-            // Usuário recorrente. Verifica se os dados do onboarding existem.
-            FirebaseUtils.buscarDadosGestante(
-                onSuccess = { dados ->
-                    if (dados != null) {
-                        _userState.value = UserState.LOGGED_IN
-                    } else {
-                        _userState.value = UserState.NEEDS_ONBOARDING
-                    }
-                },
-                onFailure = {
-                    _userState.value = UserState.AUTH_ERROR
-                }
-            )
+            // Usuário recorrente. Apenas verifica os dados.
+            fetchOnboardingStatus()
         }
     }
+
+
+    // Verifica se os dados do onboarding existem no Firestore.
+    private fun fetchOnboardingStatus() {
+        FirebaseUtils.buscarDadosGestante(
+            onSuccess = { dados ->
+                if (dados != null) {
+                    _userState.value = UserState.LOGGED_IN
+                } else {
+                    _userState.value = UserState.NEEDS_ONBOARDING
+                }
+            },
+            onFailure = {
+                _userState.value = UserState.AUTH_ERROR
+            }
+        )
+    }
+
 
     fun loadGestanteData() {
         FirebaseUtils.buscarDadosGestante(

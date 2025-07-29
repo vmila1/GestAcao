@@ -13,36 +13,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,14 +29,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
@@ -90,6 +72,8 @@ class OnboardingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         lifecycleScope.launchWhenStarted {
             onboardingViewModel.onboardingFinished.collectLatest {
                 startActivity(Intent(this@OnboardingActivity, MainActivity::class.java))
@@ -128,11 +112,32 @@ fun OnboardingFlow(
     onRequestPermission: () -> Unit
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val userState by userViewModel.userState.observeAsState(initial = UserState.UNKNOWN)
+
+    // Efeito que reage às mudanças de estado e realiza a navegação
+    LaunchedEffect(userState) {
+        when (userState) {
+            UserState.LOGGED_IN -> {
+                context.startActivity(Intent(context, MainActivity::class.java))
+                (context as? OnboardingActivity)?.finish()
+            }
+            UserState.NEEDS_ONBOARDING -> {
+                navController.navigate("select_month") {
+                    popUpTo("welcome") { inclusive = true }
+                }
+            }
+            UserState.AUTH_ERROR -> {
+                Toast.makeText(context, "Erro de conexão. Tente novamente.", Toast.LENGTH_SHORT).show()
+            }
+            else -> {}
+        }
+    }
+
 
     NavHost(navController = navController, startDestination = "welcome") {
         composable("welcome") {
-            // A tela de boas-vindas agora precisa do userViewModel
-            OnboardingWelcomeScreen(navController = navController, userViewModel = userViewModel)
+            OnboardingWelcomeScreen(userState = userState, onEnterClick = { userViewModel.signInAndProceed() })
         }
         composable("select_month") {
             SelectMonthScreen(navController = navController, viewModel = onboardingViewModel)
@@ -151,85 +156,82 @@ fun OnboardingFlow(
 }
 
 @Composable
-fun OnboardingWelcomeScreen(navController: NavController, userViewModel: UserViewModel) {
-    val context = LocalContext.current
-    // Observa o estado do usuário vindo do UserViewModel
-    val userState by userViewModel.userState.observeAsState()
-
-    // Estado local para controlar o loading nesta tela
-    var isLoading by remember { mutableStateOf(false) }
-
-    // Efeito que reage à mudança de estado do usuário
-    LaunchedEffect(userState) {
-        when (userState) {
-            UserState.AUTHENTICATING -> {
-                isLoading = true // Mostra o loading
-            }
-            UserState.LOGGED_IN -> {
-                // Usuário já cadastrado, vai direto para a tela principal
-                isLoading = false
-                context.startActivity(Intent(context, MainActivity::class.java))
-                (context as? OnboardingActivity)?.finish()
-            }
-            UserState.NEEDS_ONBOARDING -> {
-                // Usuário novo, navega para a próxima tela do onboarding
-                isLoading = false
-                navController.navigate("select_month")
-            }
-            UserState.AUTH_ERROR -> {
-                // Deu erro, para o loading e mostra uma mensagem
-                isLoading = false
-                Toast.makeText(context, "Erro de conexão. Tente novamente.", Toast.LENGTH_SHORT).show()
-            }
-            else -> isLoading = false // Garante que o loading para em outros estados
-        }
-    }
-
-    Column(
+fun OnboardingWelcomeScreen(userState: UserState, onEnterClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFF6F6))
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .systemBarsPadding(),
+        contentAlignment = Alignment.Center
     ) {
-        if (isLoading) {
-            // Mostra o indicador de progresso se estiver carregando
-            CircularProgressIndicator()
-        } else {
-            // Mostra o conteúdo normal da tela de boas-vindas
-            Spacer(modifier = Modifier.weight(1.5f))
-            Image(
-                painter = painterResource(id = R.drawable.logo_gestacao),
-                contentDescription = "Logo GestAção+",
-                modifier = Modifier.fillMaxWidth(0.8f).weight(2f)
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(text = "Bem-vinda ao", /* ... */)
-                Text(text = buildAnnotatedString { /* ... */ })
-                Spacer(modifier = Modifier.height(48.dp))
-                Button(
-                    onClick = {
-                        // Ao clicar em "Entrar", a verificação é iniciada
-                        userViewModel.checkUserStatus()
-                    },
-                    modifier = Modifier.fillMaxWidth().fillMaxWidth(0.85f).height(60.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFABBD)),
-                    shape = RoundedCornerShape(17.dp)
-                ) {
-                    Text(text = "Entrar", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                }
+        when (userState) {
+            UserState.AUTHENTICATING -> {
+                CircularProgressIndicator()
             }
-            Spacer(modifier = Modifier.weight(1.5f))
+            else -> {
+                WelcomeScreenContent(onEnterClick = onEnterClick)
+            }
         }
     }
 }
 
 @Composable
+fun WelcomeScreenContent(onEnterClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Spacer(modifier = Modifier.weight(1.5f))
+        Image(
+            painter = painterResource(id = R.drawable.logo_gestacao),
+            contentDescription = "Logo GestAção+",
+            modifier = Modifier.fillMaxWidth(0.8f).weight(2f)
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Bem-vinda ao",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF9F0243),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = Color(0xFF9F0243), fontWeight = FontWeight.Bold)) {
+                        append("Gest")
+                    }
+                    withStyle(style = SpanStyle(color = Color(0xFFFFABBD), fontWeight = FontWeight.Bold)) {
+                        append("Ação")
+                    }
+                    withStyle(style = SpanStyle(color = Color(0xFF9F0243), fontWeight = FontWeight.Bold)) {
+                        append("+")
+                    }
+                },
+                fontSize = 56.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+            Button(
+                onClick = onEnterClick,
+                modifier = Modifier.fillMaxWidth().fillMaxWidth(0.85f).height(60.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFABBD)),
+                shape = RoundedCornerShape(17.dp)
+            ) {
+                Text(text = "Entrar", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(modifier = Modifier.weight(1.5f))
+    }
+}
+
+
+@Composable
 fun SelectMonthScreen(navController: NavController, viewModel: OnboardingViewModel) {
-    // Usa o estado do ViewModel
     var selectedMonth by remember { mutableStateOf(viewModel.mes) }
 
     val months = listOf(
@@ -248,6 +250,7 @@ fun SelectMonthScreen(navController: NavController, viewModel: OnboardingViewMod
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFF6F6))
+            .systemBarsPadding()
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -298,7 +301,6 @@ fun SelectMonthScreen(navController: NavController, viewModel: OnboardingViewMod
             }
             Button(
                 onClick = {
-                    // Atualiza o ViewModel e navega
                     viewModel.mes = selectedMonth
                     navController.navigate("select_gender")
                 },
@@ -339,10 +341,10 @@ fun GenderSelectionScreen(navController: NavController, viewModel: OnboardingVie
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFF6F6))
+            .systemBarsPadding()
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // (UI da seleção de gênero permanece a mesma)
         Spacer(modifier = Modifier.height(48.dp))
         Text(
             "Qual o gênero do seu bebê?",
@@ -381,7 +383,6 @@ fun GenderSelectionScreen(navController: NavController, viewModel: OnboardingVie
             }
             TextButton(
                 onClick = {
-                    // Atualiza o ViewModel e navega
                     viewModel.genero = selectedOption
                     navController.navigate("select_location")
                 },
@@ -398,7 +399,6 @@ fun GenderSelectionScreen(navController: NavController, viewModel: OnboardingVie
 
 @Composable
 fun GenderOptionButton(text: String, color: Color, isSelected: Boolean, onClick: () -> Unit) {
-    // (O código deste item permanece o mesmo)
     val borderColor = if (isSelected) Color(0xFFFFEB3B) else Color.Transparent
     Box(
         modifier = Modifier
@@ -423,6 +423,7 @@ fun LocationScreen(navController: NavController, viewModel: OnboardingViewModel,
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFFFF6F6))
+                .systemBarsPadding()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -447,7 +448,6 @@ fun LocationScreen(navController: NavController, viewModel: OnboardingViewModel,
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- CAMPOS CONECTADOS AO VIEWMODEL ---
             LocationTextField(value = viewModel.cep, onValueChange = { viewModel.cep = it }, label = "CEP")
             LocationTextField(value = country, onValueChange = {}, label = "País", enabled = false)
             LocationTextField(value = viewModel.estado, onValueChange = { viewModel.estado = it }, label = "Estado")
@@ -465,7 +465,6 @@ fun LocationScreen(navController: NavController, viewModel: OnboardingViewModel,
                 }
                 TextButton(onClick = { viewModel.saveOnboardingData() }, enabled = !viewModel.isLoading) {
                     Text(
-                        // Lógica de texto conectada ao estado do ViewModel
                         text = if (viewModel.cep.isBlank()) "Pular >" else "Finalizar!",
                         color = if (viewModel.cep.isBlank()) Color(0xFF9F0243) else Color(0xFFD00036),
                         fontWeight = FontWeight.Bold
