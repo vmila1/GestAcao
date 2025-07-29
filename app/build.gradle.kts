@@ -30,14 +30,14 @@ android {
             val properties = Properties()
             properties.load(FileInputStream(rootProject.file("local.properties")))
 
-            // Cria o campo MAPS_API_KEY na classe BuildConfig para o build de debug
-            buildConfigField("String", "MAPS_API_KEY", "\"${properties.getProperty("MAPS_API_KEY")}\"")
+            // Cria o campo Maps_key na classe BuildConfig para o build de debug
+            buildConfigField("String", "Maps_key", "\"${properties.getProperty("Maps_key")}\"")
         }
         release {
             // Faz o mesmo para o build de release
             val properties = Properties()
             properties.load(FileInputStream(rootProject.file("local.properties")))
-            buildConfigField("String", "MAPS_API_KEY", "\"${properties.getProperty("MAPS_API_KEY")}\"")
+            buildConfigField("String", "Maps_key", "\"${properties.getProperty("Maps_key")}\"")
 
             isMinifyEnabled = false
             proguardFiles(

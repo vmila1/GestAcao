@@ -5,18 +5,18 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface PlacesApiService {
-    @GET("maps/api/place/nearbysearch/json")
+    @GET("maps/api/place/textsearch/json")
     suspend fun findNearbyPlaces(
+        @Query("query") query: String,
         @Query("location") location: String,
-        @Query("radius") radius: Int = 10000, // Raio de busca aumentado
-        @Query("keyword") keyword: String,
+        @Query("radius") radius: Int = 5000,
         @Query("key") apiKey: String
     ): PlacesResponse
 
     @GET("maps/api/place/details/json")
     suspend fun getPlaceDetails(
         @Query("place_id") placeId: String,
-        @Query("fields") fields: String = "name,opening_hours,formatted_phone_number,vicinity", // Adicionado 'vicinity' para endereço
+        @Query("fields") fields: String = "name,opening_hours,formatted_phone_number,vicinity",
         @Query("key") apiKey: String
     ): PlaceDetailsResponse
 }
@@ -28,7 +28,8 @@ data class PlaceResult(
     @SerializedName("name") val name: String,
     @SerializedName("geometry") val geometry: Geometry,
     @SerializedName("opening_hours") val openingHours: OpeningHours?,
-    @SerializedName("types") val types: List<String> = emptyList() // Adicionado para identificar o tipo do local
+    @SerializedName("types") val types: List<String> = emptyList(),
+    @SerializedName("vicinity") val vicinity: String?
 )
 
 data class Geometry(@SerializedName("location") val location: ApiLocation)
@@ -40,7 +41,7 @@ data class PlaceDetailsResult(
     @SerializedName("name") val name: String,
     @SerializedName("opening_hours") val openingHours: OpeningHours?,
     @SerializedName("formatted_phone_number") val formattedPhoneNumber: String?,
-    @SerializedName("vicinity") val vicinity: String? // Endereço/vizinhança
+    @SerializedName("vicinity") val vicinity: String?
 )
 
 data class OpeningHours(

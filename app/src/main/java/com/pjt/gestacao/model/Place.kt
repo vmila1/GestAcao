@@ -8,7 +8,9 @@ package com.pjt.gestacao.model
  * @property type A categoria do local (ex: "Hospital", "ONG", "Posto de Saúde").
  * @property latitude A coordenada de latitude do local.
  * @property longitude A coordenada de longitude do local.
- * @property operatingHours O horário de funcionamento (opcional, pode ser buscado depois).
+ * @property address O endereço do local (opcional).
+ * @property phoneNumber O número de telefone do local (opcional).
+ * @property operatingHours O horário de funcionamento (opcional).
  */
 data class Place(
     val id: String,
@@ -16,5 +18,7 @@ data class Place(
     val type: String,
     val latitude: Double,
     val longitude: Double,
+    val address: String? = null,
+    val phoneNumber: String? = null,
     val operatingHours: String? = null
 )

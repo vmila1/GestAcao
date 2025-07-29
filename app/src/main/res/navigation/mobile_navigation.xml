@@ -17,6 +17,10 @@
         <action
             android:id="@+id/action_navigation_home_to_navigation_info"
             app:destination="@id/navigation_info" />
+
+        <action
+            android:id="@+id/action_navigation_home_to_navigation_mapa"
+            app:destination="@id/navigation_mapa" />
     </fragment>
 
     <fragment
