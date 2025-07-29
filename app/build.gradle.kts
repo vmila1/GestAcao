@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
     alias(libs.plugins.jetbrains.kotlin.compose)
     id("com.google.gms.google-services")
+    id ("androidx.navigation.safeargs.kotlin")
 }
 
 android {

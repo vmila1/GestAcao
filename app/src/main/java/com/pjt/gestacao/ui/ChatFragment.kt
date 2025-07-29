@@ -21,8 +21,11 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -37,8 +40,6 @@ import com.pjt.gestacao.network.RetrofitClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
 
 class ChatFragment : Fragment() {
 
@@ -61,6 +62,8 @@ class ChatFragment : Fragment() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var speechRecognizerIntent: Intent
 
+    private val args: ChatFragmentArgs by navArgs()
+
     private val requestAudioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
@@ -71,8 +74,6 @@ class ChatFragment : Fragment() {
         }
 
     companion object {
-        // Formato esperado do comando da IA para gerar um botão de ação no chat.
-        // Exemplo: [ACAO_Ir para Início_NAVIGATE_TO_HOME]
         private const val ACTION_COMMAND_PREFIX = "[ACAO_"
         private const val ACTION_COMMAND_SEPARATOR = "_"
         private const val ACTION_COMMAND_SUFFIX = "]"
@@ -84,7 +85,6 @@ class ChatFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_chat, container, false)
 
-        // Binding das views
         inputMessage = view.findViewById(R.id.inputMessage)
         micButton = view.findViewById(R.id.micButton)
         sendButton = view.findViewById(R.id.sendButton)
@@ -103,8 +103,13 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // O SpeechRecognizer é inicializado aqui para garantir que o contexto do fragmento já está disponível.
         setupSpeechRecognizer()
+
+        args.question?.let { question ->
+            if (question.isNotEmpty()) {
+                addUserMessageAndSendToFlask(question)
+            }
+        }
     }
 
     private fun setupSpeechRecognizer() {
@@ -218,7 +223,6 @@ class ChatFragment : Fragment() {
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED -> {
                 startVoiceRecognition()
             }
-            // Explica ao usuário por que a permissão é necessária, caso ele já tenha negado uma vez.
             shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Permissão Necessária")
@@ -318,7 +322,6 @@ class ChatFragment : Fragment() {
                             addRegularAiMessage("A assistente teve um problema ao gerar a resposta. Tente reformular sua pergunta.")
                         } else {
                             var mainAiTextMessage = aiRawResponse
-                            // Verifica se a resposta contém um comando de ação no final
                             if (aiRawResponse.endsWith(ACTION_COMMAND_SUFFIX)) {
                                 val lastPrefixIndex = aiRawResponse.lastIndexOf(ACTION_COMMAND_PREFIX)
                                 if (lastPrefixIndex != -1) {
@@ -347,7 +350,7 @@ class ChatFragment : Fragment() {
                                 addRegularAiMessage(mainAiTextMessage)
                             }
                         }
-                    } else { // Trata erros de HTTP como 4xx, 5xx
+                    } else {
                         val errorMessage = when(response.code()) {
                             503 -> "A assistente está temporariamente indisponível. Estamos trabalhando para resolver."
                             else -> "A assistente virtual está indisponível no momento. Tente novamente mais tarde."
@@ -364,7 +367,7 @@ class ChatFragment : Fragment() {
                     scrollToBottom()
                 }
             })
-        } catch (e: Exception) { // Captura outros erros antes da chamada ser despachada
+        } catch (e: Exception) {
             Log.e("ChatFragment", "Erro ao tentar enviar mensagem: ${e.message}", e)
             Toast.makeText(requireContext(), "Erro ao enviar sua mensagem. Tente novamente.", Toast.LENGTH_LONG).show()
             removeTypingIndicator()
@@ -399,7 +402,6 @@ class ChatFragment : Fragment() {
 
     private fun scrollToBottom() {
         if (messageAdapter.itemCount > 0) {
-            // Usar post garante que a rolagem aconteça depois que o RecyclerView atualizar o layout
             recyclerViewMessages.post {
                 recyclerViewMessages.smoothScrollToPosition(messageAdapter.itemCount - 1)
             }

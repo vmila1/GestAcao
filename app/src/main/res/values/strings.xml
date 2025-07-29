@@ -30,4 +30,9 @@
     <string name="buscar_local">Buscar local...</string>
     <string name="posto_de_saude">Posto de Saúde</string>
     <string name="title_mapa">Mapa</string>
+
+    <string name="home_module_nutrition">Comida</string>
+    <string name="home_module_exams">Exames</string>
+    <string name="home_module_body_changes">Seu corpo</string>
+    <string name="home_module_birth">Parto</string>
 </resources>

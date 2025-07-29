@@ -6,9 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -27,6 +29,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var tvMeses: TextView
     private lateinit var tvMensagem: TextView
+    private lateinit var etDuvida: EditText
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,6 +43,7 @@ class HomeFragment : Fragment() {
 
         tvMeses = view.findViewById(R.id.tvMeses)
         tvMensagem = view.findViewById(R.id.tvMensagem)
+        etDuvida = view.findViewById(R.id.etDuvida)
 
         setupButtons(view)
         setupMap(view, savedInstanceState)
@@ -50,7 +54,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // Observa os dados da gestante
         userViewModel.gestanteData.observe(viewLifecycleOwner) { dados ->
             if (dados != null) {
                 updateUI(dados)
@@ -62,42 +65,33 @@ class HomeFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun updateUI(dados: Map<String, Any>) {
-        // Pega os dados salvos no Firebase
         val mesInicial = dados["mesGestacaoInicial"] as? Long ?: 0
         val dataCadastroTimestamp = dados["dataDoCadastro"] as? Timestamp
 
         var mesAtual = mesInicial
 
         if (dataCadastroTimestamp != null) {
-            // Converte a data do Firebase para um objeto Calendar
             val dataCadastro = Calendar.getInstance()
             dataCadastro.time = dataCadastroTimestamp.toDate()
 
-            // Pega a data atual
             val hoje = Calendar.getInstance()
 
-            // Calcula a diferença de anos e meses
             var anosPassados = hoje.get(Calendar.YEAR) - dataCadastro.get(Calendar.YEAR)
             var mesesPassados = hoje.get(Calendar.MONTH) - dataCadastro.get(Calendar.MONTH)
 
-            // Se o dia atual for menor que o dia do cadastro, o mês atual não "completou"
             if (hoje.get(Calendar.DAY_OF_MONTH) < dataCadastro.get(Calendar.DAY_OF_MONTH)) {
                 mesesPassados--
             }
 
-            // Converte os anos em meses e soma tudo
             val totalMesesPassados = (anosPassados * 12) + mesesPassados
 
-            // Soma os meses passados ao mês inicial
             if (totalMesesPassados > 0) {
                 mesAtual += totalMesesPassados
             }
         }
 
-        // Garante que o mês de gestação não passe de 9
         val mesFinal = min(mesAtual, 9L)
 
-        // Atualiza a UI com o mês calculado
         tvMeses.text = "$mesFinal meses"
 
         tvMensagem.text = when (mesFinal) {
@@ -113,31 +107,42 @@ class HomeFragment : Fragment() {
         botaoMaisInfo.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_home_to_navigation_info)
         }
-        val botao1: ImageButton = view.findViewById(R.id.imageButton)
-        val botao2: ImageButton = view.findViewById(R.id.imageButton6)
-        val botao3: ImageButton = view.findViewById(R.id.imageButton4)
-        val botao4: ImageButton = view.findViewById(R.id.imageButton5)
-        val botao5: ImageButton = view.findViewById(R.id.imageButton7)
 
-        botao1.setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 1 clicado!", Toast.LENGTH_SHORT).show()
+        val btnEnviar: Button = view.findViewById(R.id.btnEnviar)
+        btnEnviar.setOnClickListener {
+            val question = etDuvida.text.toString().trim()
+            if (question.isNotEmpty()) {
+                navigateToChatWithQuestion(question)
+            } else {
+                Toast.makeText(requireContext(), "Digite sua dúvida", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        botao2.setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 2 clicado!", Toast.LENGTH_SHORT).show()
+        val btnAlimentacao: ImageButton = view.findViewById(R.id.btnAlimentacao)
+        val btnExames: ImageButton = view.findViewById(R.id.btnExames)
+        val btnMudancasCorpo: ImageButton = view.findViewById(R.id.btnMudancasCorpo)
+        val btnParto: ImageButton = view.findViewById(R.id.btnParto)
+
+        btnAlimentacao.setOnClickListener {
+            navigateToChatWithQuestion("Me fale sobre alimentação na gravidez")
         }
 
-        botao3.setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 3 clicado!", Toast.LENGTH_SHORT).show()
+        btnExames.setOnClickListener {
+            navigateToChatWithQuestion("Quais são os principais exames do pré-natal?")
         }
 
-        botao4.setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 4 clicado!", Toast.LENGTH_SHORT).show()
+        btnMudancasCorpo.setOnClickListener {
+            navigateToChatWithQuestion("Quais são as principais mudanças no corpo durante a gestação?")
         }
 
-        botao5.setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 5 clicado!", Toast.LENGTH_SHORT).show()
+        btnParto.setOnClickListener {
+            navigateToChatWithQuestion("Quais são os sinais de que o trabalho de parto está começando?")
         }
+    }
+
+    private fun navigateToChatWithQuestion(question: String) {
+        val bundle = bundleOf("question" to question)
+        findNavController().navigate(R.id.action_home_to_chat, bundle)
     }
 
     private fun setupMap(view: View, savedInstanceState: Bundle?) {
@@ -146,6 +151,13 @@ class HomeFragment : Fragment() {
         mapView.getMapAsync { googleMap ->
             googleMap.uiSettings.isZoomControlsEnabled = true
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(-8.0476, -34.8770), 12f))
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::etDuvida.isInitialized) {
+            etDuvida.setText("")
         }
     }
 }

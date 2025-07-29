@@ -12,329 +12,281 @@
         android:layout_height="wrap_content">
 
 
-    <!-- Header com imagem e texto -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cardHeader"
-        android:layout_width="0dp"
-        android:layout_height="250dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardHeader"
+            android:layout_width="0dp"
+            android:layout_height="250dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <ImageView
-                android:id="@+id/imageBaby"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/background2" />
+                android:layout_height="match_parent">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="bottom"
-                android:orientation="vertical"
-                android:padding="16dp">
+                <ImageView
+                    android:id="@+id/imageBaby"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/background2" />
 
-                <TextView
-                    android:id="@+id/tvMeses"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/roboto_bold"
-                    android:text="@string/_7_meses"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                    android:textColor="#424242"
-                    android:textSize="30sp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="bottom"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvMensagem"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="#73FFEBEB"
-                    android:fontFamily="@font/roboto"
-                    android:text="@string/mensagem_mes_7"
-                    android:textColor="#000000"
-                    android:textColorHighlight="#090909"
-                    android:textSize="14sp" />
+                    <TextView
+                        android:id="@+id/tvMeses"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/roboto_bold"
+                        android:text="@string/_7_meses"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textColor="#424242"
+                        android:textSize="30sp" />
 
-                <Button
-                    android:id="@+id/btnSaibaMais"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:backgroundTint="@color/pink_gest"
-                    android:text="@string/toque_para_saber_mais"
-                    android:textAllCaps="false"
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
-        </FrameLayout>
-    </androidx.cardview.widget.CardView>
+                    <TextView
+                        android:id="@+id/tvMensagem"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="#73FFEBEB"
+                        android:fontFamily="@font/roboto"
+                        android:text="@string/mensagem_mes_7"
+                        android:textColor="#000000"
+                        android:textColorHighlight="#090909"
+                        android:textSize="14sp" />
 
-    <!-- Campo de dúvida -->
-    <LinearLayout
-        android:id="@+id/layoutGestAi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="10dp"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/layoutPergunta"
-        app:layout_constraintEnd_toEndOf="@id/cardHeader"
-        app:layout_constraintStart_toStartOf="@id/cardHeader"
-        app:layout_constraintTop_toBottomOf="@+id/cardHeader">
+                    <Button
+                        android:id="@+id/btnSaibaMais"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="@color/pink_gest"
+                        android:text="@string/toque_para_saber_mais"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+            </FrameLayout>
+        </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:id="@+id/title_tire_duvidas"
+        <LinearLayout
+            android:id="@+id/layoutGestAi"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/tira_duvidas"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toTopOf="@+id/layoutPergunta"
+            app:layout_constraintEnd_toEndOf="@id/cardHeader"
+            app:layout_constraintStart_toStartOf="@id/cardHeader"
+            app:layout_constraintTop_toBottomOf="@+id/cardHeader">
 
-        <TextView
-            android:id="@+id/gestAi_descricao"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/gestAi_descricao"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/title_tire_duvidas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/tira_duvidas"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
-    <LinearLayout
-        android:id="@+id/layoutPergunta"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@id/layoutBotoes"
-        app:layout_constraintEnd_toEndOf="@id/layoutGestAi"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@id/layoutBotoes"
-        app:layout_constraintTop_toBottomOf="@id/cardHeader"
-        app:layout_constraintVertical_bias="0.709">
+            <TextView
+                android:id="@+id/gestAi_descricao"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/gestAi_descricao"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+        </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <LinearLayout
+            android:id="@+id/layoutPergunta"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:layout_marginTop="16dp"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            app:layout_constraintBottom_toTopOf="@id/layoutBotoes"
+            app:layout_constraintEnd_toEndOf="@id/layoutGestAi"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@id/layoutBotoes"
+            app:layout_constraintTop_toBottomOf="@id/cardHeader"
+            app:layout_constraintVertical_bias="0.709">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDuvida"
-                android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:autoText="true"
-                android:backgroundTint="@color/grey_gest"
-                android:hint="@string/dica_input"
-                android:inputType="text|textLongMessage|textAutoComplete|textAutoCorrect|textImeMultiLine"
-                android:lineSpacingExtra="20sp" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_weight="1">
 
-        <Button
-            android:id="@+id/btnEnviar"
-            android:layout_width="wrap_content"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDuvida"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:autoText="true"
+                    android:backgroundTint="@color/grey_gest"
+                    android:hint="@string/dica_input"
+                    android:inputType="text|textLongMessage|textAutoComplete|textAutoCorrect|textImeMultiLine"
+                    android:lineSpacingExtra="20sp"
+                    android:minHeight="56dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/btnEnviar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/pink_gest"
+                android:text="@string/enviar"
+                android:textAllCaps="false" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutBotoes"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="@color/pink_gest"
-            android:text="@string/enviar"
-            android:textAllCaps="false" />
-    </LinearLayout>
+            android:layout_marginTop="24dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/layoutPergunta">
 
-    <LinearLayout
-        android:id="@+id/layoutBotoes"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="379dp"
-        android:layout_marginBottom="265dp"
-        android:foregroundGravity="center"
-        android:gravity="center|center_horizontal|fill_vertical"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/imageButton"
-                android:layout_width="67dp"
-                android:layout_height="67dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/circle" />
-
-            <TextView
-                android:id="@+id/textView3"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/textview"
-                android:textAlignment="center" />
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnAlimentacao"
+                    android:layout_width="67dp"
+                    android:layout_height="67dp"
+                    android:background="@android:color/transparent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/alimentacao" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat"
+                    android:text="@string/home_module_nutrition"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnExames"
+                    android:layout_width="67dp"
+                    android:layout_height="67dp"
+                    android:background="@android:color/transparent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/exames" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat"
+                    android:text="@string/home_module_exams"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnMudancasCorpo"
+                    android:layout_width="67dp"
+                    android:layout_height="67dp"
+                    android:background="@android:color/transparent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/corpoemudancas" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat"
+                    android:text="@string/home_module_body_changes"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnParto"
+                    android:layout_width="67dp"
+                    android:layout_height="67dp"
+                    android:background="@android:color/transparent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/parto" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat"
+                    android:text="@string/home_module_birth"
+                    android:textAlignment="center" />
+            </LinearLayout>
 
         </LinearLayout>
 
-
-        <Space
-            android:layout_width="10dp"
-            android:layout_height="match_parent"
-            android:longClickable="false" />
-
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/imageButton6"
-                android:layout_width="67dp"
-                android:layout_height="67dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/circle" />
+            android:id="@+id/layoutMap"
+            android:layout_width="0dp"
+            android:layout_height="250dp"
+            android:layout_margin="16dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/layoutBotoes">
 
             <TextView
-                android:id="@+id/textView4"
+                android:id="@+id/textView8"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/textview"
-                android:textAlignment="center" />
+                android:text="@string/ajuda_proxima"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
-        </LinearLayout>
-
-        <Space
-            android:layout_width="10dp"
-            android:layout_height="match_parent"
-            android:longClickable="false" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/imageButton4"
-                android:layout_width="67dp"
-                android:layout_height="67dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/circle" />
-
-            <TextView
-                android:id="@+id/textView2"
+            <Space
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/textview"
-                android:textAlignment="center" />
+                android:layout_height="10dp" />
 
-        </LinearLayout>
-
-        <Space
-            android:layout_width="10dp"
-            android:layout_height="match_parent"
-            android:longClickable="false" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/imageButton5"
-                android:layout_width="67dp"
-                android:layout_height="67dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/circle" />
-
-            <TextView
-                android:id="@+id/textView5"
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/mapView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/textview"
-                android:textAlignment="center" />
+                android:layout_height="match_parent"
+                android:clickable="true" />
 
         </LinearLayout>
-
-        <Space
-            android:layout_width="10dp"
-            android:layout_height="match_parent"
-            android:longClickable="false" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/imageButton7"
-                android:layout_width="67dp"
-                android:layout_height="67dp"
-                android:layout_gravity="center"
-                android:background="@android:color/transparent"
-                android:scaleType="centerCrop"
-                android:src="@drawable/circle" />
-
-            <TextView
-                android:id="@+id/textView6"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/textview"
-                android:textAlignment="center" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- Mapa -->
-    <LinearLayout
-        android:id="@+id/layoutMap"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="16dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutBotoes">
-
-        <TextView
-            android:id="@+id/textView8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ajuda_proxima"
-            android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="10dp" />
-
-        <com.google.android.gms.maps.MapView
-            android:id="@+id/mapView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clickable="true" />
-
-    </LinearLayout>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
