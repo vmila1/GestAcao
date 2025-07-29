@@ -45,7 +45,6 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
     val scope = rememberCoroutineScope()
     val cameraPositionState = rememberCameraPositionState()
 
-    // Anima a câmera para a localização inicial quando carregada
     LaunchedEffect(uiState.initialLocation) {
         uiState.initialLocation?.let {
             cameraPositionState.animate(
@@ -54,7 +53,6 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
         }
     }
 
-    // Fecha o BottomSheet se o local selecionado for nulo
     LaunchedEffect(uiState.selectedPlaceDetails) {
         if (uiState.selectedPlaceDetails is LocationDetailsUiState.Idle && sheetState.isVisible) {
             scope.launch { sheetState.hide() }
@@ -62,6 +60,7 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
     }
 
     Scaffold(
+        modifier = Modifier.systemBarsPadding(),
         containerColor = PinkLight,
         topBar = {
             Column(modifier = Modifier.background(PinkLight)) {
@@ -96,7 +95,6 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                     properties = MapProperties(isMyLocationEnabled = true),
                     uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = true)
                 ) {
-                    // Exibe os marcadores dos locais encontrados
                     uiState.nearbyPlaces.forEach { place ->
                         Marker(
                             state = MarkerState(position = LatLng(place.latitude, place.longitude)),
@@ -109,18 +107,16 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                         )
                     }
 
-                    // Adiciona a Polyline para desenhar a rota no mapa
                     if (uiState.routePoints.isNotEmpty()) {
                         Polyline(
                             points = uiState.routePoints,
-                            color = PinkPrimary, // Use a cor do tema
+                            color = PinkPrimary,
                             width = 15f
                         )
                     }
                 }
             }
 
-            // Overlay de "Buscando..."
             if (uiState.isSearching) {
                 Surface(
                     color = Color.Black.copy(alpha = 0.5f),
@@ -138,7 +134,6 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                 }
             }
 
-            // BottomSheet para detalhes do local
             if (uiState.selectedPlaceDetails !is LocationDetailsUiState.Idle) {
                 ModalBottomSheet(
                     onDismissRequest = { mapViewModel.dismissModal() },
@@ -148,10 +143,7 @@ fun MapaScreen(mapViewModel: MapViewModel = viewModel()) {
                     LocationDetailsBottomSheet(
                         state = uiState.selectedPlaceDetails,
                         onRouteClick = { place ->
-                            // Pede ao ViewModel para buscar e desenhar a rota
                             mapViewModel.getDirectionsToPlace(place)
-
-                            // Abre o Google Maps para navegação passo a passo
                             val gmmIntentUri = "google.navigation:q=${place.latitude},${place.longitude}".toUri()
                             val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                             mapIntent.setPackage("com.google.android.apps.maps")
