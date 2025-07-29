@@ -6,18 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.Spinner
+import android.widget.AdapterView
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.pjt.gestacao.R
 import com.pjt.gestacao.databinding.FragmentBuscarBinding
 import com.pjt.gestacao.model.Institution
-import com.pjt.gestacao.ui.buscar.InstitutionAdapter
+import com.pjt.gestacao.model.InstitutionsData
 import com.pjt.gestacao.ui.InstitutionDetailActivity
-import android.widget.AdapterView
-
 
 class BuscarFragment : Fragment() {
 
@@ -26,13 +23,7 @@ class BuscarFragment : Fragment() {
 
     private lateinit var adapter: InstitutionAdapter
 
-    private val institutions = listOf(
-        Institution(1, "Mãe Coruja", "Programa Social", "À 20 Km de você", R.mipmap.ic_launcher_round),
-        Institution(2, "Casa da Gestante", "ONG", "À 10 Km de você", R.mipmap.ic_launcher_round),
-        Institution(3, "Centro de Parto Rita Barradas", "Casa de parto", "À 1 Km de você", R.mipmap.ic_launcher_round),
-        Institution(4, "Bons Samaritanos", "Casa de parto", "À 1 Km de você", R.mipmap.ic_launcher_round),
-        Institution(5, "ONG Serra Calhada", "ONG", "À 1 Km de você", R.mipmap.ic_launcher_round),
-    )
+    private val institutions = InstitutionsData.institutions
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentBuscarBinding.inflate(inflater, container, false)

@@ -120,14 +120,20 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        // Termos de busca aprimorados para cada categoria
         val keyword = when (currentState.selectedFilter) {
-            "Hospitais ou maternidades" -> "hospital maternidade"
-            "Postos de Saúde" -> "posto de saude UBS"
-            "ONGs de apoio a gestantes" -> "ONG de apoio para gestantes"
-            else -> ""
+            "Hospitais ou maternidades" -> "hospital OR maternidade OR \"pronto-socorro obstétrico\" OR \"clínica da mulher\" OR UPA OR \"Unidade de Pronto Atendimento\" OR \"pronto-socorro\" OR \"UPA-E\""
+            "Postos de Saúde" -> "\"posto de saude\" OR UBS OR \"unidade básica de saúde\" OR \"clínica da família\""
+            "ONGs de apoio a gestantes" -> "\"ONG de apoio para gestantes\" OR \"casa de apoio a gestante\" OR \"grupo de apoio a mães\" OR \"ONG de apoio a mulher\" OR \"centro de apoio a mulher\" OR \"casa de acolhimento para mulheres\" OR \"ONG de apoio a criança\""
+            else -> "hospital OR maternidade OR \"posto de saude\" OR UBS OR \"ONG de apoio para gestantes\" OR \"casa de apoio\""
         }
 
-        val finalQuery = "${currentState.searchQuery} $keyword".trim()
+        val finalQuery = if (currentState.searchQuery.isNotBlank()) {
+            "${currentState.searchQuery} E ($keyword)"
+        } else {
+            keyword
+        }
+
         if (finalQuery.isBlank()) {
             _uiState.update { it.copy(nearbyPlaces = emptyList()) }
             return

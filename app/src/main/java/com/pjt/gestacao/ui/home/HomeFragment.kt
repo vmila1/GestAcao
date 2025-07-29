@@ -1,19 +1,16 @@
 package com.pjt.gestacao.ui.home
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.DrawableRes
-import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -23,14 +20,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.GeoPoint
 import com.pjt.gestacao.R
 import com.pjt.gestacao.model.Place
 import com.pjt.gestacao.ui.UserViewModel
@@ -47,6 +40,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var tvMeses: TextView
     private lateinit var tvMensagem: TextView
+    private lateinit var etDuvida: EditText
     private lateinit var mapView: MapView
     private var googleMap: GoogleMap? = null
 
@@ -62,6 +56,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         tvMeses = view.findViewById(R.id.tvMeses)
         tvMensagem = view.findViewById(R.id.tvMensagem)
+        etDuvida = view.findViewById(R.id.etDuvida)
         mapView = view.findViewById(R.id.mapView)
 
         mapView.onCreate(savedInstanceState)
@@ -154,18 +149,23 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         if (dataCadastroTimestamp != null) {
             val dataCadastro = Calendar.getInstance().apply { time = dataCadastroTimestamp.toDate() }
             val hoje = Calendar.getInstance()
+
             var anosPassados = hoje.get(Calendar.YEAR) - dataCadastro.get(Calendar.YEAR)
             var mesesPassados = hoje.get(Calendar.MONTH) - dataCadastro.get(Calendar.MONTH)
+
             if (hoje.get(Calendar.DAY_OF_MONTH) < dataCadastro.get(Calendar.DAY_OF_MONTH)) {
                 mesesPassados--
             }
+
             val totalMesesPassados = (anosPassados * 12) + mesesPassados
+
             if (totalMesesPassados > 0) {
                 mesAtual += totalMesesPassados
             }
         }
 
         val mesFinal = min(mesAtual, 9L)
+
         tvMeses.text = "$mesFinal meses"
         tvMensagem.text = when (mesFinal) {
             1L, 2L, 3L -> "Cuidados do primeiro trimestre!"
@@ -179,27 +179,44 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         view.findViewById<Button>(R.id.btnSaibaMais).setOnClickListener {
             findNavController().navigate(R.id.action_navigation_home_to_navigation_info)
         }
-        view.findViewById<ImageButton>(R.id.imageButton).setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 1 clicado!", Toast.LENGTH_SHORT).show()
+
+        view.findViewById<Button>(R.id.btnEnviar).setOnClickListener {
+            val question = etDuvida.text.toString().trim()
+            if (question.isNotEmpty()) {
+                navigateToChatWithQuestion(question)
+            } else {
+                Toast.makeText(requireContext(), "Digite sua dúvida", Toast.LENGTH_SHORT).show()
+            }
         }
-        view.findViewById<ImageButton>(R.id.imageButton6).setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 2 clicado!", Toast.LENGTH_SHORT).show()
+
+        // --- Botões de Módulos (Seu código) ---
+        view.findViewById<ImageButton>(R.id.btnAlimentacao).setOnClickListener {
+            navigateToChatWithQuestion("Me fale sobre alimentação na gravidez")
         }
-        view.findViewById<ImageButton>(R.id.imageButton4).setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 3 clicado!", Toast.LENGTH_SHORT).show()
+        view.findViewById<ImageButton>(R.id.btnExames).setOnClickListener {
+            navigateToChatWithQuestion("Quais são os principais exames do pré-natal?")
         }
-        view.findViewById<ImageButton>(R.id.imageButton5).setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 4 clicado!", Toast.LENGTH_SHORT).show()
+        view.findViewById<ImageButton>(R.id.btnMudancasCorpo).setOnClickListener {
+            navigateToChatWithQuestion("Quais são as principais mudanças no corpo durante a gestação?")
         }
-        view.findViewById<ImageButton>(R.id.imageButton7).setOnClickListener {
-            Toast.makeText(requireContext(), "Botão 5 clicado!", Toast.LENGTH_SHORT).show()
+        view.findViewById<ImageButton>(R.id.btnParto).setOnClickListener {
+            navigateToChatWithQuestion("Quais são os sinais de que o trabalho de parto está começando?")
         }
+
     }
 
-    // Gerenciamento do ciclo de vida do MapView
+    private fun navigateToChatWithQuestion(question: String) {
+        val bundle = bundleOf("question" to question)
+        findNavController().navigate(R.id.action_home_to_chat, bundle)
+    }
+
+    // Gerenciamento do ciclo de vida do MapView e do Fragment
     override fun onResume() {
         super.onResume()
         mapView.onResume()
+        if (::etDuvida.isInitialized) {
+            etDuvida.setText("")
+        }
     }
 
     override fun onPause() {

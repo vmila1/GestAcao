@@ -6,4 +6,7 @@ data class Institution(
     val type: String,
     val address: String,
     val image: Int,
+    val description: String,
+    val phone: String,
+    val site: String
 )
